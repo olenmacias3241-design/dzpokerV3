@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}牌友 · DZPoker{% endblock %}
+
+{% block content %}
+<div class="content-container-split">
+    <aside class="left-nav">
+        <ul>
+            <li class="active"><a href="{{ url_for('friends') }}">牌友</a></li>
+            <li><a href="#">推荐</a></li>
+            <li><a href="#">请求</a></li>
+            <li><a href="#">近期</a></li>
+        </ul>
+    </aside>
+    <main class="main-content">
+        <div class="friends-header">
+            <div class="tabs">
+                <button class="tab active">活跃中</button>
+                <button class="tab">在线</button>
+                <button class="tab">全部</button>
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="搜索牌友">
+            </div>
+        </div>
+        <div class="friends-list-container empty">
+            <div class="empty-state">
+                <p>你没有活跃好友。</p>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

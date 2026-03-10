@@ -143,7 +143,14 @@ class GameWrapper:
                 if str(u.get("user_id")) == str(pid):
                     name = (u.get("username") or "玩家")[:20]
                     break
+            # 摊牌/结束：未弃牌玩家的手牌对所有人可见；否则仅自己可见
+            stage = s.get("stage")
+            stage_name = (stage.name if stage else "PREFLOP") if stage else "PREFLOP"
+            in_showdown = stage_name in ("SHOWDOWN", "ENDED")
+            not_folded = ps.get("is_in_hand", False) and ps.get("is_active", False)
             if pid == private_pid and hole:
+                hand = [self._card_to_display(c) for c in hole]
+            elif in_showdown and not_folded and hole:
                 hand = [self._card_to_display(c) for c in hole]
             else:
                 hand = [self._card_to_display("??") for _ in hole] if hole else []

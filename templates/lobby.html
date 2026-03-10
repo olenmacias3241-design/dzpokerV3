@@ -1,128 +1,115 @@
 {% extends "base.html" %}
 {% block title %}游戏大厅 · DZPoker{% endblock %}
+
 {% block content %}
-<h1 class="page-title">游戏大厅</h1>
-<p class="lobby-tagline">专注朋友间的线上牌局 · 5 秒创建私人牌桌</p>
-<p class="lobby-sub">游戏币免费送，全级别 1/2～100/200，All-in 玩法</p>
+<div class="lobby-container">
 
-<div class="panel" id="login-panel" style="display: none;">
-    <!-- 登录功能已注释：默认游客入座，无需输入昵称 -->
-    <h2>登录</h2>
-    <p style="color: var(--text-muted); margin-bottom: 8px;">输入昵称即可进入大厅</p>
-    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <input type="text" id="login-username" placeholder="昵称" maxlength="32" style="padding: 8px 12px; width: 160px;">
-        <button type="button" class="btn btn-amber" id="login-btn">登录</button>
-        <span id="login-msg" style="color: var(--text-muted);"></span>
+    <div class="lobby-header">
+        <div class="player-balance">
+            <img src="{{ url_for('static', filename='images/assets/chips/coin_52:46.png') }}" alt="Coins">
+            <span>1,234,567,890</span>
+        </div>
+        <h1 class="lobby-title">德州扑克</h1>
+        <div class="header-actions">
+            <button class="btn-icon">?</button>
+            <button class="btn-icon">X</button>
+        </div>
     </div>
-</div>
-<div class="panel" id="logged-panel" style="display: none;">
-    <p>已登录：<strong id="logged-username"></strong> <button type="button" class="btn btn-primary" id="logout-btn">退出</button></p>
-</div>
 
-<div class="quick-start-wrap panel">
-    <h2>快速开始</h2>
-    <p style="color: var(--text-muted); margin-bottom: 12px;">自动匹配牌桌，或一键创建私人牌局</p>
-    <button type="button" class="btn btn-amber" id="quick-start-btn">快速加入</button>
-    <button type="button" class="btn btn-primary" id="create-table-btn">创建牌桌</button>
-    <span id="quick-start-msg" style="margin-left: 12px; color: var(--text-muted);"></span>
-</div>
+    <div class="table-carousel-container">
+        <div class="carousel-arrow left">&lt;</div>
+        
+        <div class="table-list-scroll" id="table-list">
+            <!-- Static Example Card 1 (Inactive) -->
+            <div class="table-card">
+                <div class="card-header">
+                    <span class="card-blinds-label">赌注</span>
+                    <span class="card-blinds-value">$1M/$2M</span>
+                    <span class="card-buyin">买入: $40M - $200M</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-row">
+                        <span><i class="icon-watch"></i> 手表点数</span>
+                        <span class="value">X 100</span>
+                    </div>
+                    <div class="card-row">
+                        <span><i class="icon-challenge"></i> 挑战</span>
+                        <span class="value">3</span>
+                    </div>
+                    <div class="card-row">
+                        <span><i class="icon-suits"></i> 扑克花色</span>
+                        <span class="value check">✔</span>
+                    </div>
+                </div>
+            </div>
 
-<div class="panel create-table-panel" id="create-table-panel" style="display: none;">
-    <h2>创建牌桌 · 私人牌局</h2>
-    <p class="create-table-hint">全级别覆盖，自定义盲注与带入，熟人局开桌即玩</p>
-    <form id="create-table-form" class="create-table-form">
-        <div class="form-row">
-            <label class="preset-label">快捷盲注（一键填充）</label>
-            <div class="blind-presets" id="blind-presets">
-                <button type="button" class="preset-btn" data-sb="1" data-bb="2">1/2</button>
-                <button type="button" class="preset-btn" data-sb="2" data-bb="4">2/4</button>
-                <button type="button" class="preset-btn" data-sb="5" data-bb="10">5/10</button>
-                <button type="button" class="preset-btn" data-sb="10" data-bb="20">10/20</button>
-                <button type="button" class="preset-btn" data-sb="25" data-bb="50">25/50</button>
-                <button type="button" class="preset-btn" data-sb="50" data-bb="100">50/100</button>
+            <!-- Static Example Card 2 (Active/Center) -->
+            <div class="table-card active">
+                 <div class="card-header">
+                    <span class="card-blinds-label">赌注</span>
+                    <span class="card-blinds-value">$5M/$10M</span>
+                    <span class="card-buyin">买入: $200M - $1B</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-row">
+                        <span><i class="icon-watch"></i> 手表点数</span>
+                        <span class="value">X 150</span>
+                    </div>
+                    <div class="card-row">
+                        <span><i class="icon-challenge"></i> 挑战</span>
+                        <span class="value">4</span>
+                    </div>
+                    <div class="card-row">
+                        <span><i class="icon-suits"></i> 扑克花色</span>
+                        <span class="value check">✔</span>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label for="ct-name">牌桌名称</label>
-                <input type="text" id="ct-name" name="tableName" placeholder="例如：朋友局、练习桌" maxlength="32">
-            </div>
-        </div>
-        <div class="form-row form-row-2">
-            <div class="form-group">
-                <label for="ct-sb">小盲注</label>
-                <input type="number" id="ct-sb" name="sb" min="1" value="5">
-            </div>
-            <div class="form-group">
-                <label for="ct-bb">大盲注</label>
-                <input type="number" id="ct-bb" name="bb" min="1" value="10">
-            </div>
-        </div>
-        <div class="form-row form-row-2">
-            <div class="form-group">
-                <label for="ct-min-buy">最小带入</label>
-                <input type="number" id="ct-min-buy" name="minBuyIn" min="0" placeholder="默认 10×大盲">
-            </div>
-            <div class="form-group">
-                <label for="ct-max-buy">最大带入</label>
-                <input type="number" id="ct-max-buy" name="maxBuyIn" min="0" placeholder="默认 10000">
-            </div>
-        </div>
-        <div class="form-row form-row-2">
-            <div class="form-group">
-                <label for="ct-players">人数</label>
-                <select id="ct-players" name="maxPlayers">
-                    <option value="2">2 人</option>
-                    <option value="6" selected>6 人</option>
-                    <option value="9">9 人</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="ct-chips">起始筹码 <span class="free-badge">免费</span></label>
-                <input type="number" id="ct-chips" name="defaultChips" min="10" value="1000">
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group form-group-checkbox">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="ct-insurance" name="insurance" value="1">
-                    <span class="checkbox-text">开启保险</span>
-                </label>
-                <span class="form-hint">All-in 时可购买保险，减少波动</span>
-            </div>
-        </div>
-        <div class="form-row form-actions">
-            <button type="submit" class="btn btn-primary">创建并加入</button>
-            <button type="button" class="btn btn-amber" id="create-table-cancel">取消</button>
-        </div>
-        <div class="auth-msg" id="create-table-msg"></div>
-    </form>
-</div>
 
-<div class="panel">
-    <h2>牌桌列表</h2>
-    <div class="lobby-filters">
-        <label>级别</label>
-        <select id="filter-blinds">
-            <option value="">全部级别</option>
-            <option value="small">小级别 1/2～10/20</option>
-            <option value="medium">中级别 25/50～50/100</option>
-            <option value="high">大级别 100/200+</option>
-        </select>
-        <label>人数</label>
-        <select id="filter-players">
-            <option value="">全部</option>
-            <option value="2">2 人</option>
-            <option value="6">6 人</option>
-            <option value="9">9 人</option>
-        </select>
-        <button type="button" class="btn btn-primary" id="filter-apply">筛选</button>
+            <!-- Static Example Card 3 (Inactive) -->
+            <div class="table-card">
+                 <div class="card-header">
+                    <span class="card-blinds-label">赌注</span>
+                    <span class="card-blinds-value">$10M/$20M</span>
+                    <span class="card-buyin">买入: $400M - $2B</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-row">
+                        <span><i class="icon-watch"></i> 手表点数</span>
+                        <span class="value">X 300</span>
+                    </div>
+                    <div class="card-row">
+                        <span><i class="icon-challenge"></i> 挑战</span>
+                        <span class="value">6</span>
+                    </div>
+                    <div class="card-row">
+                        <span><i class="icon-suits"></i> 扑克花色</span>
+                        <span class="value check">✔</span>
+                    </div>
+                </div>
+            </div>
+             <!-- lobby.js will append more (unstyled) items here -->
+        </div>
+
+        <div class="carousel-arrow right">&gt;</div>
     </div>
-    <div class="table-list" id="table-list">
-        <!-- 由 JS 填充 -->
+
+    <div class="lobby-footer">
+        <button class="btn-icon-text">
+            <i class="icon-settings"></i>
+            <span>牌桌设置</span>
+        </button>
+        <button class="btn-play-now">马上游玩</button>
+        <button class="btn-icon-text">
+            <i class="icon-store"></i>
+            <span>购买筹码</span>
+        </button>
     </div>
+
 </div>
 {% endblock %}
+
 {% block scripts %}
+{# We keep the original script so it still works, even if the new elements are unstyled #}
 <script src="/static/lobby.js"></script>
 {% endblock %}

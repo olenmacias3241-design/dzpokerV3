@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}新闻中心 · DZPoker{% endblock %}
+
+{% block content %}
+<div class="content-container-split">
+    <aside class="left-nav">
+        <ul>
+            <li class="active"><a href="{{ url_for('news') }}">新闻</a></li>
+            <li><a href="#">奖励</a></li>
+            <li><a href="#">邮件</a></li>
+        </ul>
+    </aside>
+    <main class="main-content">
+        <h2>奖金专区</h2>
+        <div class="news-grid">
+            <div class="news-card" style="background-image: url('...');">
+                <h3>新人报到奖励</h3>
+            </div>
+            <div class="news-card" style="background-image: url('...');">
+                <h3>周末锦标赛</h3>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

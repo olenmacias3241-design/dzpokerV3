@@ -650,8 +650,8 @@ function updateUI(state) {
             : '<div class="player-emote"></div>';
 
         let handHtml = '';
-        /* 仅自己或比牌阶段显示牌面；其他玩家在未比牌时显示牌背 */
-        const showCardFaces = (realSeat === mySeat || stage === 'showdown') && p.hand && p.hand.length > 0;
+        /* 仅自己或摊牌/结束阶段显示牌面；摊牌后未弃牌玩家的手牌对所有人可见 */
+        const showCardFaces = (realSeat === mySeat || stage === 'showdown' || stage === 'ended') && p.hand && p.hand.length > 0;
         const isRed = (s) => s === '♥' || s === '♦';
         const isPreflopDeal = stage === 'preflop' && !p.has_folded && (p.hand && p.hand.length === 2 || !showCardFaces);
         const holeDelay0 = realSeat * 130;
