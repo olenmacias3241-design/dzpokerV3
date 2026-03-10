@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DZPoker{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style_common.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="site-nav">
+        <a href="/" class="logo">♠ DZPoker</a>
+        <div class="links">
+            <a href="/">牌桌</a>
+            <a href="{{ url_for('lobby') }}" class="{% if request.endpoint == 'lobby' %}active{% endif %}">大厅</a>
+            <a href="{{ url_for('mall') }}" class="{% if request.endpoint == 'mall' %}active{% endif %}">商城</a>
+        </div>
+        <div class="nav-right">
+            <span class="nav-guest" id="nav-guest">
+                <a href="/login">登录</a>
+                <a href="/register">注册</a>
+            </span>
+            <span class="nav-user" id="nav-user" style="display:none;">
+                <span class="nav-username" id="nav-username"></span>
+                <span class="user-coins" id="nav-coins"></span>
+                <a href="#" id="nav-logout">退出</a>
+            </span>
+        </div>
+    </nav>
+    <main class="page-container">
+        {% block content %}{% endblock %}
+    </main>
+    <script src="/static/config.js"></script>
+    <script src="/static/auth.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

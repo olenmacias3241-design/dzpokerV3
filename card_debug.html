@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Rendering Debug Page</title>
+    <style>
+        body { font-family: sans-serif; background: #2c3e50; color: #ecf0f1; padding: 20px; }
+        #log { border: 1px solid #7f8c8d; padding: 10px; height: 200px; overflow-y: scroll; margin-bottom: 20px; }
+        .card {
+            width: 80px;
+            height: 120px;
+            border: 1px solid #fff;
+            border-radius: 8px;
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px;
+            margin: 5px;
+            background: #fff;
+            color: #000;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .card .rank { text-align: left; }
+        .card .suit { text-align: right; }
+        .red { color: #e74c3c; }
+        .black { color: #2c3e50; }
+        #controls { margin-top: 20px; }
+        input, button { padding: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Card Rendering Debug Page</h1>
+    <p>A minimal test page to help debug card rendering logic from WebSocket data.</p>
+    
+    <h2>WebSocket Log</h2>
+    <div id="log"></div>
+
+    <h2>Rendered Cards</h2>
+    <div id="card-display"></div>
+
+    <div id="controls">
+        <h2>Manual Test</h2>
+        <input type="text" id="card-input" placeholder="Enter card code (e.g., As, Kd, Tc)">
+        <button onclick="testRender()">Render Card</button>
+    </div>
+
+    <script>
+        const cardDisplay = document.getElementById('card-display');
+        const logDiv = document.getElementById('log');
+
+        function log(message) {
+            const p = document.createElement('p');
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(p);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        /**
+         * Renders a single card based on its code (e.g., "As", "Kd", "Tc").
+         * This is the function that needs to be debugged.
+         * The "NaN" issue likely originates from here or a similar function.
+         */
+        function renderCard(cardCode) {
+            if (!cardCode || typeof cardCode !== 'string' || cardCode.length < 2) {
+                log(`Error: Invalid card code received: ${cardCode}`);
+                return;
+            }
+
+            const rankMap = { 'T': '10', 'J': 'J', 'Q': 'Q', 'K': 'K', 'A': 'A' };
+            const suitMap = { 's': '♠', 'h': '♥', 'd': '♦', 'c': '♣' };
+            const colorMap = { 's': 'black', 'h': 'red', 'd': 'red', 'c': 'black' };
+
+            // Problem Area: The original code might be trying to parse the rank as a number directly.
+            // For example, parseInt('T') would result in NaN.
+            let rank = cardCode.slice(0, -1);
+            let suit = cardCode.slice(-1).toLowerCase();
+
+            // Correctly handle face cards and tens
+            let displayRank = rankMap[rank] || rank;
+            let displaySuit = suitMap[suit] || '?';
+            let color = colorMap[suit] || 'black';
+
+            // Check for NaN or other invalid values
+            if (displayRank === 'NaN' || displaySuit === '?') {
+                log(`Rendering error: Could not parse ${cardCode}. Resulted in Rank=${displayRank}, Suit=${displaySuit}`);
+                // Display the error state
+                displayRank = 'ERR';
+                displaySuit = '💣';
+            }
+
+
+            const cardElement = document.createElement('div');
+            cardElement.className = `card ${color}`;
+            
+            const rankElement = document.createElement('span');
+            rankElement.className = 'rank';
+            rankElement.textContent = displayRank;
+
+            const suitElement = document.createElement('span');
+            suitElement.className = 'suit';
+            suitElement.textContent = displaySuit;
+
+            cardElement.appendChild(rankElement);
+            cardElement.appendChild(suitElement);
+            
+            cardDisplay.appendChild(cardElement);
+            log(`Successfully rendered card: ${cardCode}`);
+        }
+
+        function testRender() {
+            const input = document.getElementById('card-input');
+            const cardCode = input.value;
+            if (cardCode) {
+                renderCard(cardCode);
+                input.value = '';
+            }
+        }
+        
+        // --- WebSocket Simulation ---
+        // In the real app, this data would come from the server.
+        function simulateWebSocketMessage() {
+            log('Simulating WebSocket message with hand data...');
+            const sampleData = {
+                hole_cards: ['Ah', 'Ks'],
+                community_cards: ['Td', '2c', 'Jc']
+            };
+
+            // Clear previous cards
+            cardDisplay.innerHTML = '';
+            
+            log(`Rendering hole cards: ${sampleData.hole_cards.join(', ')}`);
+            sampleData.hole_cards.forEach(renderCard);
+
+            log(`Rendering community cards: ${sampleData.community_cards.join(', ')}`);
+            sampleData.community_cards.forEach(renderCard);
+        }
+
+        log('Debug page loaded.');
+        log('Backend service (胖子) is ready and providing data like ["As", "Kd"].');
+        log('This page helps the frontend (小黄) fix the UI display bugs.');
+        
+        // Simulate receiving a message after 2 seconds
+        setTimeout(simulateWebSocketMessage, 2000);
+
+    </script>
+</body>
+</html>

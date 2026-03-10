@@ -1,0 +1,8 @@
+Flask>=2.0
+flask-socketio>=5.3
+eventlet>=0.33
+PyMySQL>=1.0
+python-dotenv>=1.0
+PyJWT>=2.0
+SQLAlchemy>=1.4
+mysql-connector-python>=8.0

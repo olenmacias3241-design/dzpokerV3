@@ -1,0 +1,912 @@
+/* dzpokerV3/static/style.css - 牌桌页主题 */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+
+:root {
+    --bg-deep: #0a1219;
+    --bg-velvet: #13202d;
+    --border: rgba(245, 197, 66, 0.18);
+    --accent-amber: #f5c542;
+    --accent-amber-dim: rgba(245, 197, 66, 0.5);
+    --accent-glow: rgba(245, 197, 66, 0.12);
+    --felt: #0d4d2b;
+    --felt-light: #0f5c34;
+    --wood: #4a3728;
+    --wood-border: #6b4c3a;
+    --text-primary: #e8ecf0;
+    --text-muted: #8a96a4;
+    --card-white: #fafafa;
+    --red-suit: #c41e3a;
+    --black-suit: #1a1a1a;
+    --shadow-deep: 0 12px 40px rgba(0, 0, 0, 0.45);
+    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.25);
+    --radius-card: 12px;
+    --radius-panel: 16px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--bg-deep);
+    background-image:
+        radial-gradient(ellipse 120% 80% at 50% 40%, var(--bg-velvet) 0%, var(--bg-deep) 70%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    color: var(--text-primary);
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-x: hidden;
+}
+
+.game-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 1;
+    min-height: calc(100vh - 120px);
+    width: 100%;
+    padding: 16px 20px 32px;
+}
+
+/* ----- Table ----- */
+.poker-table {
+    width: min(920px, 100%);
+    aspect-ratio: 1.85 / 1;
+    max-height: 46vh;
+    margin-bottom: 36px;
+    background: var(--felt);
+    background-image:
+        radial-gradient(ellipse 90% 70% at 50% 50%, var(--felt-light) 0%, var(--felt) 50%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    border-radius: 50%;
+    border: 16px solid var(--wood);
+    box-shadow:
+        inset 0 0 100px rgba(0, 0, 0, 0.2),
+        0 0 0 2px var(--wood-border),
+        var(--shadow-deep);
+    position: relative;
+    overflow: visible;
+}
+
+.table-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    padding: 8px;
+    overflow: visible;
+    max-width: 85%;
+}
+
+.stage {
+    margin-bottom: 4px;
+}
+
+#stage-display {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent-amber);
+    text-shadow: 0 0 16px var(--accent-glow);
+    margin: 0;
+    letter-spacing: 0.04em;
+}
+
+.turn-display {
+    margin: 4px 0 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary, #f5f5f5);
+    opacity: 0.95;
+}
+
+.community-cards {
+    margin: 8px 0;
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: visible;
+}
+
+#community-cards-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.community-cards .card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pot {
+    margin: 4px 0;
+}
+
+.pot h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+#pot-display {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent-amber);
+    font-weight: 700;
+}
+
+.side-pots {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.my-stats {
+    margin-top: 10px;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+    border: 1px solid rgba(245, 197, 66, 0.25);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 16px 24px;
+}
+
+.my-stats .my-stats-chips { color: var(--accent-amber); }
+.my-stats .my-stats-bet { color: var(--text-primary); }
+.my-stats .my-stats-call { color: var(--text-muted); }
+.my-stats strong {
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: 2px;
+}
+
+.street-hint {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.last-action {
+    margin-top: 4px;
+    min-height: 1.2em;
+}
+
+#last-action-display {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* ----- Cards ----- */
+.card {
+    background: var(--card-white);
+    border-radius: var(--radius-card);
+    padding: 8px 6px;
+    font-size: 1.15rem;
+    line-height: 1.25;
+    min-width: 38px;
+    min-height: 52px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    font-weight: 700;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+    transition: opacity 0.35s ease-out, transform 0.35s ease-out, box-shadow 0.2s;
+    overflow: visible;
+}
+
+.card.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.card.red { color: var(--red-suit); }
+.card.black { color: var(--black-suit); }
+
+/* ========== 发牌动画：多种样式，每轮随机 ========== */
+
+/* ---- 手牌 (2张) 动画样式 ---- */
+.player-hand .card-deal-hole,
+.player-hand .card-back.card-deal-hole { opacity: 0; }
+.player-hand .card-deal-hole.visible,
+.player-hand .card-back.card-deal-hole.visible { opacity: 1; }
+
+@keyframes hole-1-slide { 0% { opacity: 0; transform: translateY(24px) scale(0.75); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+.deal-hole-1 { animation: hole-1-slide 0.42s ease-out forwards; }
+
+@keyframes hole-2-flip { 0% { opacity: 0; transform: perspective(320px) rotateY(-95deg) scale(0.85); } 100% { opacity: 1; transform: perspective(320px) rotateY(0deg) scale(1); } }
+.deal-hole-2 { animation: hole-2-flip 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+@keyframes hole-3-bounce { 0% { opacity: 0; transform: translateY(-28px) scale(0.7); } 70% { transform: translateY(4px) scale(1.02); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+.deal-hole-3 { animation: hole-3-bounce 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+@keyframes hole-4-pop { 0% { opacity: 0; transform: scale(0.3); } 100% { opacity: 1; transform: scale(1); } }
+.deal-hole-4 { animation: hole-4-pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) forwards; }
+
+@keyframes hole-5-slideLR { 0% { opacity: 0; transform: translateX(-40px) scale(0.8); } 100% { opacity: 1; transform: translateX(0) scale(1); } }
+.player-hand .card-deal-hole.deal-hole-5:nth-child(1),
+.player-hand .card-back.card-deal-hole.deal-hole-5:nth-child(1) { animation: hole-5-slideLR 0.4s ease-out forwards; }
+@keyframes hole-5-slideLR2 { 0% { opacity: 0; transform: translateX(40px) scale(0.8); } 100% { opacity: 1; transform: translateX(0) scale(1); } }
+.player-hand .card-deal-hole.deal-hole-5:nth-child(2),
+.player-hand .card-back.card-deal-hole.deal-hole-5:nth-child(2) { animation: hole-5-slideLR2 0.4s ease-out forwards; }
+
+@keyframes hole-6-zoom { 0% { opacity: 0; transform: scale(0.5) rotate(-8deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+.player-hand .card-deal-hole.deal-hole-6:nth-child(1),
+.player-hand .card-back.card-deal-hole.deal-hole-6:nth-child(1) { animation: hole-6-zoom 0.45s cubic-bezier(0.34, 1.2, 0.64, 1) forwards; }
+@keyframes hole-6-zoom2 { 0% { opacity: 0; transform: scale(0.5) rotate(8deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
+.player-hand .card-deal-hole.deal-hole-6:nth-child(2),
+.player-hand .card-back.card-deal-hole.deal-hole-6:nth-child(2) { animation: hole-6-zoom2 0.45s cubic-bezier(0.34, 1.2, 0.64, 1) forwards; }
+
+/* 底牌发牌：每座两张，按座位顺序用 style="animation-delay: Xms" 错开 */
+
+/* ---- 公共牌·翻牌 (3张) 动画样式 ---- */
+.card.deal-flop { opacity: 0; }
+.card.deal-flop.visible { opacity: 1; }
+
+.deal-flop-1 { transform: translateY(-48px) scale(0.85); transition: opacity 0.4s ease-out, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+.deal-flop-1.visible { transform: translateY(0) scale(1); }
+
+.deal-flop-2 { transform: perspective(400px) rotateX(-75deg) scale(0.9); transition: opacity 0.35s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.deal-flop-2.visible { transform: perspective(400px) rotateX(0deg) scale(1); }
+
+.deal-flop-3 { transform: translateY(-24px) scale(0.5); transition: opacity 0.3s, transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1); }
+.deal-flop-3.visible { transform: translateY(0) scale(1); }
+
+.deal-flop-4 { transform: scale(0.2); transition: opacity 0.35s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.deal-flop-4.visible { transform: scale(1); }
+
+.deal-flop-5 { transform: translateY(30px) scale(0.8); opacity: 0; transition: opacity 0.4s, transform 0.4s ease-out; }
+.deal-flop-5.visible { transform: translateY(0) scale(1); }
+
+.deal-flop-6 { transform: scale(0.6) rotateY(-60deg); transition: opacity 0.35s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.deal-flop-6.visible { transform: scale(1) rotateY(0deg); }
+
+/* ---- 公共牌·转牌 (1张) 动画样式 ---- */
+.card.deal-turn { opacity: 0; }
+.card.deal-turn.visible { opacity: 1; }
+
+.deal-turn-1 { transform: perspective(400px) rotateY(-90deg) scale(0.85); transition: opacity 0.3s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.deal-turn-1.visible { transform: perspective(400px) rotateY(0deg) scale(1); }
+
+.deal-turn-2 { transform: translateY(-56px) scale(0.75); transition: opacity 0.4s, transform 0.45s ease-out; }
+.deal-turn-2.visible { transform: translateY(0) scale(1); }
+
+.deal-turn-3 { transform: translateY(-20px) scale(0.4); transition: opacity 0.35s, transform 0.55s cubic-bezier(0.34, 1.5, 0.64, 1); }
+.deal-turn-3.visible { transform: translateY(0) scale(1); }
+
+.deal-turn-4 { transform: scale(0.2); transition: opacity 0.3s, transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1); }
+.deal-turn-4.visible { transform: scale(1); }
+
+.deal-turn-5 { transform: scale(0.6) rotate(-180deg); transition: opacity 0.4s, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+.deal-turn-5.visible { transform: scale(1) rotate(0deg); }
+
+.deal-turn-6 { transform: translateX(-80px) scale(0.8); transition: opacity 0.35s, transform 0.45s ease-out; }
+.deal-turn-6.visible { transform: translateX(0) scale(1); }
+
+/* ---- 公共牌·河牌 (1张) 动画样式 ---- */
+.card.deal-river { opacity: 0; }
+.card.deal-river.visible { opacity: 1; }
+
+.deal-river-1 { transform: perspective(400px) rotateY(90deg) scale(0.85); transition: opacity 0.3s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.deal-river-1.visible { transform: perspective(400px) rotateY(0deg) scale(1); }
+
+.deal-river-2 { transform: translateY(40px) scale(0.8); transition: opacity 0.4s, transform 0.45s ease-out; }
+.deal-river-2.visible { transform: translateY(0) scale(1); }
+
+.deal-river-3 { transform: scale(0.3) translateY(20px); transition: opacity 0.35s, transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1); }
+.deal-river-3.visible { transform: scale(1) translateY(0); }
+
+.deal-river-4 { transform: scale(0.4); transition: opacity 0.35s, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.deal-river-4.visible { transform: scale(1); }
+
+.deal-river-5 { transform: scale(0.7) rotate(180deg); transition: opacity 0.4s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.deal-river-5.visible { transform: scale(1) rotate(0deg); }
+
+.deal-river-6 { transform: translateX(80px) scale(0.8); transition: opacity 0.35s, transform 0.45s ease-out; }
+.deal-river-6.visible { transform: translateX(0) scale(1); }
+
+/* 兼容：无随机样式时的默认 */
+.card.deal-community { transition: opacity 0.35s ease-out, transform 0.35s ease-out; }
+
+/* 底牌发牌动画：每座两张，按座位顺序依次出现（用 animation-delay） */
+.card-deal-hole,
+.player-hand .card-back.card-deal-hole,
+.player-hand .card.card-deal-hole {
+    opacity: 0;
+}
+.player-hand .card-deal-hole.visible,
+.player-hand .card-back.card-deal-hole.visible,
+.player-hand .card.card-deal-hole.visible {
+    opacity: 1;
+}
+@keyframes hole-card-in {
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.card-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 52px;
+    min-width: 38px;
+    min-height: 52px;
+    border-radius: var(--radius-card);
+    /* 经典扑克牌背：深蓝+金边，简洁不抢眼 */
+    background: linear-gradient(158deg, #1a2d4a 0%, #0f1c2e 50%, #152942 100%);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        2px 2px 8px rgba(0, 0, 0, 0.2);
+    background-image:
+        linear-gradient(158deg, #1a2d4a 0%, #0f1c2e 50%, #152942 100%),
+        repeating-linear-gradient(
+            -30deg,
+            transparent,
+            transparent 4px,
+            rgba(255, 255, 255, 0.03) 4px,
+            rgba(255, 255, 255, 0.03) 6px
+        );
+    margin: 0 3px;
+}
+
+/* ----- Seats ----- */
+#player-seats {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
+#player-seats * {
+    pointer-events: auto;
+}
+
+.player-seat {
+    position: absolute;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.player-seat-empty .player-info-empty {
+    min-width: 80px;
+    width: 80px;
+    padding: 10px 8px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px dashed rgba(245, 197, 66, 0.35);
+    border-radius: 10px;
+}
+
+.empty-seat-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.empty-seat-hint {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    opacity: 0.8;
+}
+
+.player-info {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    box-shadow: var(--shadow-deep);
+    transition: border-color 0.25s, box-shadow 0.25s;
+    min-width: 0;
+    width: 108px;
+    max-width: 128px;
+}
+
+.player-info.active {
+    border-color: var(--accent-amber);
+    box-shadow: 0 0 24px var(--accent-glow);
+    animation: seat-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes seat-pulse {
+    0%, 100% { box-shadow: 0 0 24px var(--accent-glow); }
+    50% { box-shadow: 0 0 32px var(--accent-amber), 0 0 48px var(--accent-glow); }
+}
+
+.player-info.folded {
+    opacity: 0.65;
+}
+
+.player-info.folded .player-hand .card-back {
+    filter: grayscale(0.8) brightness(0.7);
+}
+
+.player-info.winner {
+    border-color: #e8c547;
+    box-shadow: 0 0 24px rgba(232, 197, 71, 0.6);
+}
+
+.player-emote {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 2px;
+    min-height: 1rem;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-info strong {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-info .chips-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent-amber);
+    margin-bottom: 0;
+    display: block;
+}
+
+.player-info .bet-line {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.player-info .my-hand-type {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-amber);
+    margin-top: 4px;
+    display: block;
+}
+
+.player-hand-wrap {
+    margin-bottom: 6px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.player-meta {
+    display: block;
+}
+
+.player-hand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.player-hand .card,
+.player-hand .card-back {
+    font-size: 0.9rem;
+    padding: 4px 2px;
+    min-width: 30px;
+    min-height: 42px;
+    width: 30px;
+    height: 42px;
+}
+
+.badges {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 4px;
+}
+
+.badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    letter-spacing: 0.02em;
+}
+
+.badge.dealer {
+    background: #444;
+    color: #ddd;
+}
+
+.badge.sb {
+    background: #2d5a27;
+    color: #b8e0b0;
+}
+
+.badge.bb {
+    background: #1e3a5f;
+    color: #a8d0f0;
+}
+
+.all-in-tag {
+    color: #f0a030;
+    font-weight: 700;
+    font-size: 0.7rem;
+    display: block;
+    margin-top: 2px;
+}
+
+.player-info .win-amount {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #7dd87d;
+    margin-top: 2px;
+}
+
+/* ----- Action Bar（始终贴底部） ----- */
+.actions {
+    margin-top: auto;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 28px;
+    background: rgba(19, 32, 45, 0.95);
+    border: 1px solid rgba(245, 197, 66, 0.22);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-deep);
+    backdrop-filter: blur(6px);
+    width: 100%;
+    max-width: 920px;
+    box-sizing: border-box;
+}
+
+.actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.actions button {
+    padding: 12px 20px;
+    font-size: 0.98rem;
+    font-family: inherit;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.2s, background 0.2s;
+}
+
+.actions button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.actions button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+#start-game-btn {
+    background: linear-gradient(160deg, #256f3a 0%, #1a5230 100%);
+    color: #e8f5e9;
+    box-shadow: 0 2px 14px rgba(37, 111, 58, 0.4);
+}
+
+#start-game-btn:hover:not(:disabled) {
+    background: linear-gradient(160deg, #2d8345 0%, #256f3a 100%);
+}
+
+#fold-btn {
+    background: linear-gradient(160deg, #5c2a2a, #4a2222);
+    color: #f0c8c8;
+}
+
+#check-btn, #call-btn {
+    background: linear-gradient(160deg, #2a4a5c, #1e3a4a);
+    color: #c8e4f0;
+}
+
+#bet-btn {
+    background: linear-gradient(160deg, #4a3a1a, #3d2f14);
+    color: var(--accent-amber);
+}
+
+#all-in-btn {
+    background: linear-gradient(160deg, #5c2a1a, #4a2216);
+    color: #ffb888;
+}
+
+.bet-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.bet-controls input[type="number"] {
+    width: 88px;
+    padding: 10px 12px;
+    font-size: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid rgba(245, 197, 66, 0.35);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--text-primary);
+}
+
+.bet-controls input[type="range"] {
+    width: 130px;
+    accent-color: var(--accent-amber);
+}
+
+.pot-presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pot-presets button {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: rgba(245, 197, 66, 0.12);
+    color: var(--accent-amber);
+    border: 1px solid rgba(245, 197, 66, 0.35);
+    border-radius: 8px;
+}
+
+.pot-presets button:hover {
+    background: rgba(245, 197, 66, 0.22);
+}
+
+.deal-controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.deal-next-btn {
+    padding: 14px 32px !important;
+    font-size: 1.1rem !important;
+    font-weight: 700;
+    background: linear-gradient(160deg, #256f3a 0%, #1a5230 100%) !important;
+    color: #e8f5e9 !important;
+    border: 2px solid rgba(245, 197, 66, 0.4) !important;
+    border-radius: 12px !important;
+}
+
+.deal-next-btn:hover {
+    background: linear-gradient(160deg, #2d8345 0%, #256f3a 100%) !important;
+}
+
+.emote-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(245, 197, 66, 0.15);
+}
+
+.emote-label {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-right: 6px;
+    font-weight: 500;
+}
+
+.emote-btn {
+    padding: 8px 12px !important;
+    font-size: 1.15rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: background 0.2s, transform 0.12s;
+}
+
+.emote-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(1.05);
+}
+
+.insurance-controls {
+    margin-top: 12px;
+    padding: 16px 20px;
+    background: rgba(19, 32, 45, 0.9);
+    border: 1px solid rgba(245, 197, 66, 0.25);
+    border-radius: var(--radius-panel);
+}
+
+.insurance-message {
+    margin: 0 0 12px 0;
+    font-size: 0.98rem;
+    color: var(--text-primary);
+}
+
+.insurance-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.insurance-form label { color: var(--text-muted); font-size: 0.9rem; }
+.insurance-form input { width: 100px; padding: 8px 12px; }
+.insurance-controls .btn { margin-right: 8px; }
+
+/* ----- Winner Overlay ----- */
+.winner-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+    z-index: 1000;
+}
+
+.winner-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.winner-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.winner-content {
+    position: relative;
+    text-align: center;
+    z-index: 2;
+}
+
+.winner-overlay.visible .winner-content {
+    animation: winner-pop 0.5s ease-out;
+}
+
+@keyframes winner-pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    70% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.winner-text {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 700;
+    color: var(--accent-amber);
+    text-shadow: 0 0 36px var(--accent-glow);
+    padding: 28px 52px 12px;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 18px;
+    border: 2px solid var(--accent-amber);
+}
+
+.winner-amount {
+    display: block;
+    font-size: clamp(1.2rem, 3vw, 1.6rem);
+    font-weight: 700;
+    color: #7dd87d;
+    margin-top: 8px;
+    padding-bottom: 20px;
+}
+
+.winner-glow {
+    position: absolute;
+    inset: -24px;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
+}
+
+.confetti-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    animation: confetti-fall 3s ease-in forwards;
+}
+
+@keyframes confetti-fall {
+    to {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+#no-table-msg {
+    max-width: 480px;
+    margin: 24px auto 0;
+    text-align: center;
+    padding: 28px !important;
+}
+
+#no-table-msg a {
+    color: var(--accent-amber);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+#no-table-msg a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+    .poker-table {
+        max-height: 40vh;
+        margin-bottom: 16px;
+    }
+    .player-info {
+        width: 90px;
+        max-width: 100px;
+        padding: 5px 8px;
+    }
+    .player-hand .card,
+    .player-hand .card-back {
+        min-width: 26px;
+        min-height: 36px;
+        width: 26px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+    .actions {
+        padding: 12px 16px;
+        margin-top: 24px;
+    }
+    .actions button {
+        padding: 8px 14px;
+        font-size: 0.9rem;
+    }
+    .game-area {
+        padding: 12px 16px 24px;
+    }
+}
