@@ -118,11 +118,9 @@ def handle_player_action(game_state, player_id, action, amount=0):
     if action == PlayerAction.FOLD:
         player_state['is_active'] = False
         player_state['last_action'] = 'FOLD'
-        player_state['has_acted'] = True
     
     elif action == PlayerAction.CHECK:
         player_state['last_action'] = 'CHECK'
-        player_state['has_acted'] = True
 
     elif action == PlayerAction.CALL:
         call_amount = min(amount_to_call - player_state.get('bet_this_round', 0), player_state['stack'])
@@ -131,7 +129,6 @@ def handle_player_action(game_state, player_id, action, amount=0):
         player_state['total_bet_this_hand'] = player_state.get('total_bet_this_hand', 0) + call_amount
         game_state['pot'] += call_amount
         player_state['last_action'] = 'CALL'
-        player_state['has_acted'] = True
         if player_state['stack'] == 0:
             player_state['is_all_in'] = True
 
@@ -144,7 +141,6 @@ def handle_player_action(game_state, player_id, action, amount=0):
         game_state['pot'] += amount
         game_state['amount_to_call'] = amount
         player_state['last_action'] = 'BET'
-        player_state['has_acted'] = True
         game_state['last_raiser_id'] = player_id
         if player_state['stack'] == 0:
             player_state['is_all_in'] = True
@@ -166,7 +162,6 @@ def handle_player_action(game_state, player_id, action, amount=0):
         game_state['amount_to_call'] = player_state['bet_this_round']
         game_state['last_raise_amount'] = amount
         player_state['last_action'] = 'RAISE'
-        player_state['has_acted'] = True
         game_state['last_raiser_id'] = player_id
         if player_state['stack'] == 0:
             player_state['is_all_in'] = True
@@ -222,20 +217,8 @@ def find_next_player(game_state, last_actor_id):
         if player_state.get('bet_this_round', 0) < max_bet:
             return next_player_id, False
 
-        # 已跟齐，且已经回到 last_raiser
+        # 已跟齐，且已经回到 last_raiser → 本街结束
         if last_raiser and next_player_id == last_raiser:
-            # 底牌圈特殊处理：BB 是初始加注者，但需要给他行动机会
-            stage = game_state.get('stage')
-            bb_player_id = game_state.get('bb_player_id')
-            
-            if stage == GameStage.PREFLOP and last_raiser == bb_player_id:
-                # 检查 BB 是否已经行动过（除了下盲注）
-                bb_state = game_state['players'].get(bb_player_id)
-                if bb_state and not bb_state.get('has_acted', False):
-                    # BB 还没有真正行动过，给他机会
-                    return bb_player_id, False
-            
-            # 其他情况：本街结束
             return None, True
 
     return None, True
@@ -329,7 +312,6 @@ def advance_to_next_stage(game_state):
         player_state = game_state['players'][player_id]
         if player_state.get('is_in_hand'):
             player_state['bet_this_round'] = 0
-            player_state['has_acted'] = False
             # We can also reset their last action
             # player_state['last_action'] = None
 
@@ -338,48 +320,25 @@ def advance_to_next_stage(game_state):
         if player_state.get('is_active'):
             player_state['bet_this_round'] = 0
             player_state['last_action'] = None
-            player_state['has_acted'] = False
-    
-    # 计算当前边池（用于实时显示）
-    from . import pot_manager
-    
-    players_for_pot = {}
-    for pid, pstate in game_state['players'].items():
-        players_for_pot[pid] = {
-            'total_bet_this_hand': pstate.get('total_bet_this_hand', 0),
-            'is_folded': not pstate.get('is_in_hand', False) or not pstate.get('is_active', False)
-        }
-    
-    # 存储当前边池信息（供前端显示）
-    game_state['current_side_pots'] = pot_manager.calculate_side_pots(players_for_pot)
 
     # Reset 'current_player_id' to the first active player after the button — 翻牌/转/河从庄位下家开始
-    player_order = game_state.get('player_order', [])
-    dealer_button_pos = game_state.get('dealer_button_position', 0)
-    
-    # 确保 dealer_button_pos 在有效范围内
+    dealer_pos = game_state.get('dealer_button_position', -1)
+    player_order = game_state.get('player_order')
     if player_order:
-        dealer_button_pos = min(dealer_button_pos, len(player_order) - 1)
-        dealer_player_id = player_order[dealer_button_pos]
-        
-        # 找到庄位玩家在 player_order 中的索引
-        dealer_index = player_order.index(dealer_player_id)
-        num_players = len(player_order)
-        
-        # 从庄位下一位开始找第一个可行动的玩家
-        first_active_player = None
-        for i in range(1, num_players + 1):
-            next_index = (dealer_index + i) % num_players
-            next_player_id = player_order[next_index]
-            player_state = game_state['players'].get(next_player_id)
-            
-            if player_state and player_state.get('is_in_hand') and not player_state.get('is_all_in'):
-                first_active_player = next_player_id
-                break
-        
-        game_state['current_player_id'] = first_active_player
+        player_ids = [p for p in player_order if p in game_state['players']]
     else:
-        game_state['current_player_id'] = None
+        player_ids = list(game_state['players'].keys())
+    num_players = len(player_ids)
+    
+    first_active_player = None
+    for i in range(1, num_players + 1):
+        player_id = player_ids[(dealer_pos + i) % num_players]
+        player_state = game_state['players'][player_id]
+        if player_state.get('is_in_hand') and not player_state.get('is_all_in'):
+            first_active_player = player_id
+            break
+
+    game_state['current_player_id'] = first_active_player
 
     print(f"New round starts with player: {first_active_player}")
     return game_state
@@ -511,14 +470,8 @@ def start_new_hand(game_state):
     dealer_pos = game_state.get('dealer_button_position', 0)
     dealer_pos = min(dealer_pos, num_players - 1) if num_players else 0
 
-    # 2人对局特殊处理：庄位 = SB
-    if num_players == 2:
-        sb_pos = dealer_pos  # 庄位就是 SB
-        bb_pos = (dealer_pos + 1) % num_players  # 庄位下一位是 BB
-    else:
-        # 多人对局：庄位下一位是 SB，再下一位是 BB
-        sb_pos = (dealer_pos + 1) % num_players
-        bb_pos = (dealer_pos + 2) % num_players
+    sb_pos = (dealer_pos + 1) % num_players
+    bb_pos = (dealer_pos + 2) % num_players
     
     sb_player_id = active_player_ids[sb_pos]
     bb_player_id = active_player_ids[bb_pos]
@@ -550,17 +503,9 @@ def start_new_hand(game_state):
 
     game_state['amount_to_call'] = actual_bb
     
-    # First player to act — 底牌圈从 BB 下家开始（2人对局时 SB 先行动）
-    if num_players == 2:
-        # 2人对局：小盲注先行动
-        first_to_act_id = sb_player_id
-        print(f"Heads-up: SB ({sb_player_id}) acts first")
-    else:
-        # 多人对局：UTG（BB 下一位）先行动
-        utg_pos = (bb_pos + 1) % num_players
-        first_to_act_id = active_player_ids[utg_pos]
-        print(f"Multi-way: UTG ({first_to_act_id}) acts first")
-    
+    # First player to act is after the big blind (UTG) — 底牌圈从 BB 下家开始
+    utg_pos = (bb_pos + 1) % num_players
+    first_to_act_id = active_player_ids[utg_pos]
     game_state['current_player_id'] = first_to_act_id
     game_state['last_raiser_id'] = bb_player_id # The BB is the initial "raise"
     

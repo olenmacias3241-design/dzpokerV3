@@ -28,6 +28,17 @@
     box-sizing: border-box;
 }
 
+/* 牌桌页全宽，不限制 max-width */
+.page-container--game {
+    max-width: none;
+    padding: 0;
+    width: 100%;
+    min-height: calc(100vh - 56px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 body {
     font-family: 'Noto Sans SC', sans-serif;
     background: var(--bg-deep);
@@ -53,15 +64,17 @@ body {
     flex: 1;
     min-height: calc(100vh - 120px);
     width: 100%;
-    padding: 16px 20px 32px;
+    max-width: 100%;
+    padding: 16px 20px 24px;
+    gap: 0;
 }
 
 /* ----- Table ----- */
 .poker-table {
-    width: min(920px, 100%);
+    width: min(920px, 96%);
     aspect-ratio: 1.85 / 1;
-    max-height: 46vh;
-    margin-bottom: 36px;
+    max-height: min(50vh, 420px);
+    margin: 0 0 24px 0;
     background: var(--felt);
     background-image:
         radial-gradient(ellipse 90% 70% at 50% 50%, var(--felt-light) 0%, var(--felt) 50%),
@@ -74,6 +87,7 @@ body {
         var(--shadow-deep);
     position: relative;
     overflow: visible;
+    flex-shrink: 0;
 }
 
 .table-center {
@@ -573,12 +587,12 @@ body {
 /* ----- Action Bar（始终贴底部） ----- */
 .actions {
     margin-top: auto;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
-    padding: 20px 28px;
+    gap: 12px;
+    padding: 16px 24px;
     background: rgba(19, 32, 45, 0.95);
     border: 1px solid rgba(245, 197, 66, 0.22);
     border-radius: var(--radius-panel);
@@ -587,6 +601,7 @@ body {
     width: 100%;
     max-width: 920px;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .actions-row {

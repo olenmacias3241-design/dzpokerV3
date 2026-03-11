@@ -110,33 +110,51 @@
         return div.innerHTML;
     }
 
+    /** 无牌桌时显示的 3 张静态示例卡片 HTML（与 lobby 模板一致） */
+    var STATIC_CARDS_HTML =
+        '<div class="table-card">' +
+        '<div class="card-header"><span class="card-blinds-label">赌注</span><span class="card-blinds-value">$1M/$2M</span><span class="card-buyin">买入: $40M - $200M</span></div>' +
+        '<div class="card-body"><div class="card-row"><span><i class="icon-watch"></i> 手表点数</span><span class="value">X 100</span></div><div class="card-row"><span><i class="icon-challenge"></i> 挑战</span><span class="value">3</span></div><div class="card-row"><span><i class="icon-suits"></i> 扑克花色</span><span class="value check">✔</span></div></div></div>' +
+        '<div class="table-card active">' +
+        '<div class="card-header"><span class="card-blinds-label">赌注</span><span class="card-blinds-value">$5M/$10M</span><span class="card-buyin">买入: $200M - $1B</span></div>' +
+        '<div class="card-body"><div class="card-row"><span><i class="icon-watch"></i> 手表点数</span><span class="value">X 150</span></div><div class="card-row"><span><i class="icon-challenge"></i> 挑战</span><span class="value">4</span></div><div class="card-row"><span><i class="icon-suits"></i> 扑克花色</span><span class="value check">✔</span></div></div></div>' +
+        '<div class="table-card">' +
+        '<div class="card-header"><span class="card-blinds-label">赌注</span><span class="card-blinds-value">$10M/$20M</span><span class="card-buyin">买入: $400M - $2B</span></div>' +
+        '<div class="card-body"><div class="card-row"><span><i class="icon-watch"></i> 手表点数</span><span class="value">X 300</span></div><div class="card-row"><span><i class="icon-challenge"></i> 挑战</span><span class="value">6</span></div><div class="card-row"><span><i class="icon-suits"></i> 扑克花色</span><span class="value check">✔</span></div></div></div>';
+
     function renderTables(tablesData) {
         if (!tableListEl) return;
         if (!tablesData || tablesData.length === 0) {
-            tableListEl.innerHTML = "<p style='color: var(--text-muted);'>暂无牌桌，请点击「创建牌桌」。</p>";
+            tableListEl.innerHTML = STATIC_CARDS_HTML;
             return;
         }
-        tableListEl.innerHTML = tablesData.map(function (t) {
+        tableListEl.innerHTML = tablesData.map(function (t, idx) {
+            var sb = (t.blinds && t.blinds.sb != null) ? t.blinds.sb : 0;
+            var bb = (t.blinds && t.blinds.bb != null) ? t.blinds.bb : 0;
+            var blindsText = "$" + (sb >= 1e6 ? (sb / 1e6) + "M" : sb) + "/$" + (bb >= 1e6 ? (bb / 1e6) + "M" : bb);
+            var minBuy = (t.minBuyIn != null) ? (t.minBuyIn >= 1e6 ? (t.minBuyIn / 1e6) + "M" : t.minBuyIn) : "?";
+            var maxBuy = (t.maxBuyIn != null) ? (t.maxBuyIn >= 1e6 ? (t.maxBuyIn / 1e6) + "M" : t.maxBuyIn) : "?";
+            var buyInText = "买入: $" + minBuy + " - $" + maxBuy;
+            var isActive = idx === 0;
             var statusClass = t.status === "waiting" ? "waiting" : "playing";
             var statusText = t.status === "waiting" ? "等待中" : "对局中";
-            var canJoin = t.status === "waiting" && t.playerCount < (t.maxPlayers || 2);
+            var canJoin = t.status === "waiting" && (t.playerCount || 0) < (t.maxPlayers || 6);
             var joinBtn = canJoin
                 ? "<button type='button' class='btn btn-amber join-btn' data-table-id='" + t.tableId + "'>进入牌桌</button>"
                 : "<span class='table-status " + statusClass + "'>" + statusText + "</span>";
-            var buyInText = (t.minBuyIn != null || t.maxBuyIn != null)
-                ? " 带入 " + (t.minBuyIn != null ? t.minBuyIn : "?") + "–" + (t.maxBuyIn != null ? t.maxBuyIn : "?")
-                : "";
-            var insuranceTag = t.insurance ? "<span class='table-tag insurance-tag'>保险</span>" : "";
             return (
-                "<div class='table-card' data-table-id='" + t.tableId + "'>" +
-                "<div class='table-name'>" + escapeHtml(t.tableName) + insuranceTag + "</div>" +
-                "<div class='table-meta'>" +
-                "<span>盲注 " + (t.blinds ? t.blinds.sb + "/" + t.blinds.bb : "?/?") + "</span>" +
-                "<span>" + (t.seatedPlayers || t.playerCount || 0) + " / " + (t.maxPlayers || 2) + " 人</span>" +
-                (buyInText ? "<span>" + buyInText + "</span>" : "") +
+                "<div class='table-card" + (isActive ? " active" : "") + "' data-table-id='" + t.tableId + "'>" +
+                "<div class='card-header'>" +
+                "<span class='card-blinds-label'>赌注</span>" +
+                "<span class='card-blinds-value'>" + escapeHtml(blindsText) + "</span>" +
+                "<span class='card-buyin'>" + escapeHtml(buyInText) + "</span>" +
                 "</div>" +
-                "<div class='table-status " + statusClass + "'>" + statusText + "</div>" +
-                joinBtn +
+                "<div class='card-body'>" +
+                "<div class='card-row'><span><i class='icon-watch'></i> 手表点数</span><span class='value'>X " + (t.watchPoints || 100) + "</span></div>" +
+                "<div class='card-row'><span><i class='icon-challenge'></i> 挑战</span><span class='value'>" + (t.seatedPlayers || t.playerCount || 0) + " / " + (t.maxPlayers || 6) + "</span></div>" +
+                "<div class='card-row'><span><i class='icon-suits'></i> 扑克花色</span><span class='value check'>✔</span></div>" +
+                "</div>" +
+                "<div class='card-actions'>" + joinBtn + "</div>" +
                 "</div>"
             );
         }).join("");
@@ -184,7 +202,7 @@
                 renderTables(data.tables || []);
             })
             .catch(function () {
-                tableListEl.innerHTML = "<p style='color: var(--text-muted);'>加载失败，请刷新重试。</p>";
+                tableListEl.innerHTML = STATIC_CARDS_HTML;
             });
     }
 
@@ -289,7 +307,24 @@
     }
 
     if (filterApply) filterApply.addEventListener("click", loadTables);
-    ensureToken().then(function () { loadTables(); }).catch(function () {
+
+    var loadTablesTimer = null;
+    function loadTablesDebounced() {
+        if (loadTablesTimer) clearTimeout(loadTablesTimer);
+        loadTablesTimer = setTimeout(loadTables, 300);
+    }
+
+    ensureToken().then(function () { loadTablesDebounced(); }).catch(function () {
         if (tableListEl) tableListEl.innerHTML = "<p style='color: var(--text-muted);'>无法连接，请刷新重试。</p>";
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var btn = document.getElementById("create-table-btn");
+        if (btn) {
+            btn.addEventListener("click", function () {
+                var createPanel = document.getElementById("create-table-panel");
+                if (createPanel) createPanel.style.display = "block";
+            });
+        }
     });
 })();

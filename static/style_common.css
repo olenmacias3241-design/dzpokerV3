@@ -102,6 +102,13 @@ body {
     padding: 32px 24px;
 }
 
+/* 大厅页全屏：不限制宽度与内边距 */
+.page-container--lobby {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
 .page-title {
     font-size: 1.85rem;
     font-weight: 700;

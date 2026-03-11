@@ -1,118 +1,99 @@
 {% extends "base.html" %}
-{% block title %}DZPoker - Table{% endblock %}
+{% block title %}DZPoker - 牌桌{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 {% endblock %}
 
 {% block content %}
-<div id="animation-layer">
-    <!-- Chip and prop animations will happen here -->
+<div id="no-table-msg" class="panel" style="display: none;">
+    <p>请从<a href="{{ url_for('lobby') }}">大厅</a>选择牌桌进入，或访问 <strong>/?table=1</strong> 进入 1 号桌。</p>
 </div>
 
-<div class="game-container">
-    <div class="poker-table">
-
-        <!-- Community Cards Area -->
-        <div class="community-cards">
-            <div class="card-placeholder"></div>
-            <div class="card-placeholder"></div>
-            <div class="card-placeholder"></div>
-            <div class="card-placeholder"></div>
-            <div class="card-placeholder"></div>
-        </div>
-
-        <!-- Pot Area -->
-        <div class="pot-area">
-            <span class="pot-total">Pot: 1,234,567</span>
-        </div>
-
-        <!-- Player Seats -->
-        <!-- Positions will be set via CSS -->
-        <div class="player-seat" id="seat-0">
-            <div class="player-info">
-                <div class="player-avatar"></div>
-                <div class="player-name">Player 1</div>
-                <div class="player-chips">100,000</div>
-            </div>
-            <div class="player-cards">
-                <div class="card back"></div>
-                <div class="card back"></div>
-            </div>
-            <div class="dealer-button">D</div>
-        </div>
-
-        <div class="player-seat" id="seat-1">
-            <div class="player-info">
-                <div class="player-avatar"></div>
-                <div class="player-name">Player 2</div>
-                <div class="player-chips">150,000</div>
-            </div>
-            <div class="player-cards">
-                <div class="card back"></div>
-                <div class="card back"></div>
-            </div>
-        </div>
-
-        <div class="player-seat" id="seat-2">
-            <div class="player-info">
-                <div class="player-avatar"></div>
-                <div class="player-name">Player 3</div>
-                <div class="player-chips">80,000</div>
-            </div>
-             <div class="player-cards">
-                <div class="card back"></div>
-                <div class="card back"></div>
-            </div>
-        </div>
-
-        <div class="player-seat" id="seat-3">
-            <div class="player-info">
-                <div class="player-avatar"></div>
-                <div class="player-name">Player 4</div>
-                <div class="player-chips">200,000</div>
-            </div>
-             <div class="player-cards">
-                <div class="card back"></div>
-                <div class="card back"></div>
-            </div>
-        </div>
-
-        <div class="player-seat" id="seat-4">
-            <div class="player-info">
-                <div class="player-avatar"></div>
-                <div class="player-name">Player 5</div>
-                <div class="player-chips">50,000</div>
-            </div>
-             <div class="player-cards">
-                <div class="card back"></div>
-                <div class="card back"></div>
-            </div>
-        </div>
-
-        <div class="player-seat" id="seat-5">
-            <div class="player-info">
-                <div class="player-avatar"></div>
-                <div class="player-name">You (Player 6)</div>
-                <div class="player-chips">120,000</div>
-            </div>
-             <div class="player-cards">
-                <div class="card face-up">A♠</div>
-                <div class="card face-up">K♠</div>
-            </div>
-        </div>
-
+<div class="game-area" style="display: none;">
+    <div id="sit-at-table-wrap" class="panel sit-at-table-panel" style="display: none;">
+        <h2 id="sit-at-table-title">选择座位</h2>
+        <p class="sit-at-table-hint">点击空位落座</p>
+        <div id="sit-at-table-seats" class="sit-seats"></div>
+    </div>
+    <div id="leave-seat-wrap" style="display: none;">
+        <button type="button" id="leave-seat-btn" class="leave-seat-btn">离开座位</button>
     </div>
 
-    <!-- Action Buttons Area -->
-    <div class="action-controls">
-        <button class="btn-fold">Fold</button>
-        <button class="btn-check">Check</button>
-        <button class="btn-raise">Raise</button>
-        <div class="raise-slider">
-            <input type="range" min="100" max="120000" value="100">
-            <span class="raise-amount">100</span>
+    <div class="poker-table" role="region" aria-label="牌桌">
+        <div class="table-center">
+            <div class="stage">
+                <h3 id="stage-display">等待开始</h3>
+                <p id="turn-display" class="turn-display" style="display: none;"></p>
+            </div>
+            <div class="community-cards" aria-label="公共牌">
+                <div id="community-cards-display"></div>
+            </div>
+            <div class="pot">
+                <h3>底池: <span id="pot-display">0</span></h3>
+                <p id="side-pots-display" class="side-pots" style="display: none;"></p>
+            </div>
+            <div class="last-action">
+                <p id="last-action-display"></p>
+            </div>
         </div>
+        <div id="player-seats"></div>
+    </div>
+
+    <div class="actions">
+        <button type="button" id="start-game-btn">开始对局</button>
+        <div id="deal-controls" class="deal-controls" style="display: none;">
+            <button type="button" id="deal-next-btn" class="deal-next-btn">发翻牌</button>
+        </div>
+        <div id="insurance-controls" class="insurance-controls" style="display: none;">
+            <p id="insurance-message" class="insurance-message"></p>
+            <div id="insurance-form" class="insurance-form" style="display: none;">
+                <label for="insurance-amount">保费（筹码）</label>
+                <input type="number" id="insurance-amount" min="0" value="0" placeholder="0">
+                <button type="button" id="insurance-buy-btn" class="btn btn-primary">买保险</button>
+            </div>
+            <button type="button" id="insurance-decline-btn" class="btn btn-amber">不买，直接发牌</button>
+        </div>
+        <div id="action-controls" style="display: none;">
+            <div class="actions-row">
+                <button type="button" id="fold-btn">弃牌</button>
+                <button type="button" id="check-btn" style="display: none;">过牌</button>
+                <button type="button" id="call-btn" style="display: none;">跟注</button>
+                <button type="button" id="bet-btn">下注</button>
+                <button type="button" id="all-in-btn">All-in</button>
+            </div>
+            <div class="bet-controls">
+                <input type="number" id="bet-amount" placeholder="金额" min="0">
+                <input type="range" id="bet-slider" min="0" max="10000" value="0">
+                <div class="pot-presets">
+                    <button type="button" id="preset-min">最小</button>
+                    <button type="button" id="preset-half">一半</button>
+                    <button type="button" id="preset-3q">3/4</button>
+                    <button type="button" id="preset-pot">底池</button>
+                </div>
+            </div>
+            <div id="my-stats" class="my-stats" style="display: none;">
+                筹码 <strong id="my-chips-display">0</strong>
+                本街下注 <strong id="my-bet-display">0</strong>
+                跟注额 <strong id="call-amount-display">0</strong>
+                <span id="street-hint" class="street-hint" style="display: none;"></span>
+            </div>
+            <div class="emote-bar">
+                <span class="emote-label">表情</span>
+                <button type="button" class="emote-btn" data-emote="👍">👍</button>
+                <button type="button" class="emote-btn" data-emote="😂">😂</button>
+                <button type="button" class="emote-btn" data-emote="😎">😎</button>
+                <button type="button" class="emote-btn" data-emote="🙏">🙏</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="winner-overlay" class="winner-overlay hidden" aria-hidden="true">
+        <div class="winner-content">
+            <p id="winner-text" class="winner-text"></p>
+            <span id="winner-amount" class="winner-amount" style="display: none;"></span>
+        </div>
+        <div id="confetti-container" class="confetti-container"></div>
     </div>
 </div>
 {% endblock %}

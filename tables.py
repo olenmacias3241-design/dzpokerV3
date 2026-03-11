@@ -196,6 +196,8 @@ class GameWrapper:
             "dealer_idx": dealer_idx,
             "sb_idx": sb_idx,
             "bb_idx": bb_idx,
+            "sb_player_id": s.get("sb_player_id"),
+            "bb_player_id": s.get("bb_player_id"),
             "amount_to_call": s.get("amount_to_call", 0),
             "call_amount": s.get("amount_to_call", 0),
             "min_raise_to": s.get("amount_to_call", 0) + max(s.get("last_raise_amount", s.get("bb", 0)), s.get("bb", 0)),
@@ -342,9 +344,27 @@ def sit(db_or_table_id, table_id_or_token=None, token_or_seat=None, seat_idx=Non
         current_seat = t["seats"].index(uid)
         return True, None
     
-    # 游戏进行中不允许新玩家入座
-    if t["status"] != "waiting":
-        return False, "游戏进行中，无法入座"
+    # 游戏进行中不允许新玩家入座（但如果游戏刚开始且还在等待阶段，允许入座）
+    if t["status"] == "playing":
+        # 检查游戏是否刚开始（还没有发牌）
+        game_state = t.get("game_state")
+        if game_state:
+            stage = game_state.get("stage")
+            # 如果还在 PREFLOP 且没有人行动过，允许入座
+            if stage and hasattr(stage, 'name') and stage.name == "PREFLOP":
+                # 检查是否有人已经行动
+                has_action = any(
+                    p.get("last_action") for p in game_state.get("players", {}).values()
+                )
+                if not has_action:
+                    # 游戏刚开始，还没人行动，允许入座
+                    pass
+                else:
+                    return False, "游戏进行中，无法入座"
+            else:
+                return False, "游戏进行中，无法入座"
+        else:
+            return False, "游戏进行中，无法入座"
     
     if s < 0 or s >= t["max_players"]:
         return False, "座位号无效"

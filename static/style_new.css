@@ -328,7 +328,8 @@ body {
     flex-direction: column;
     width: 100vw;
     height: 100vh;
-    background: #0c141f url("{{ url_for('static', filename='images/assets/backgrounds/lobby-bg.jpg') }}") center/cover;
+    background: #0c141f;
+    background-image: radial-gradient(ellipse 120% 80% at 50% 20%, rgba(28, 45, 60, 0.9) 0%, #0c141f 70%);
     padding: 20px;
     box-sizing: border-box;
     justify-content: space-between;
@@ -351,9 +352,16 @@ body {
     font-size: 24px;
     font-weight: bold;
 }
-.player-balance img {
+.player-balance img,
+.player-balance .coin-icon {
     width: 30px;
+    height: 30px;
     margin-right: 10px;
+    font-size: 28px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .lobby-title {
@@ -450,6 +458,25 @@ body {
 }
 .card-row .value.check {
     font-size: 24px;
+}
+
+.card-actions {
+    padding: 15px;
+    text-align: center;
+    border-top: 1px solid rgba(106, 77, 142, 0.5);
+}
+.card-actions .join-btn {
+    width: 100%;
+    padding: 10px 16px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.card-actions .table-status {
+    font-size: 0.85rem;
+    padding: 4px 12px;
+    border-radius: 999px;
+    display: inline-block;
 }
 
 .lobby-footer {

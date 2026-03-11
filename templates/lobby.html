@@ -6,7 +6,7 @@
 
     <div class="lobby-header">
         <div class="player-balance">
-            <img src="{{ url_for('static', filename='images/assets/chips/coin_52:46.png') }}" alt="Coins">
+            <span class="coin-icon" aria-hidden="true">🪙</span>
             <span>1,234,567,890</span>
         </div>
         <h1 class="lobby-title">德州扑克</h1>
@@ -99,11 +99,29 @@
             <i class="icon-settings"></i>
             <span>牌桌设置</span>
         </button>
+        <button id="create-table-btn" class="btn-icon-text">
+            <i class="icon-add"></i>
+            <span>创建牌桌</span>
+        </button>
         <button class="btn-play-now">马上游玩</button>
         <button class="btn-icon-text">
             <i class="icon-store"></i>
             <span>购买筹码</span>
         </button>
+    </div>
+
+    <!-- 创建牌桌表单 -->
+    <div id="create-table-panel" style="display:none; position:fixed; top:20%; left:20%; width:60%; background:#333; padding:20px; border-radius:10px;">
+        <form id="create-table-form">
+            <h3>创建牌桌</h3>
+            <input type="text" id="ct-name" placeholder="牌桌名称">
+            <input type="number" id="ct-sb" placeholder="小盲">
+            <input type="number" id="ct-bb" placeholder="大盲">
+            <input type="number" id="ct-players" placeholder="人数">
+            <button type="submit">提交</button>
+            <button type="button" id="create-table-cancel">取消</button>
+            <p id="create-table-msg"></p>
+        </form>
     </div>
 
 </div>

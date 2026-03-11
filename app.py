@@ -63,6 +63,16 @@ def mall():
     return render_template("mall.html")
 
 
+@app.route("/friends")
+def friends():
+    return render_template("friends.html")
+
+
+@app.route("/news")
+def news():
+    return render_template("news.html")
+
+
 # ---------- 登录 ----------
 @app.route("/login")
 def login_page():
@@ -775,5 +785,5 @@ if __name__ == "__main__":
     import bots
     bots.start(socketio)
     
-    socketio.run(app, host="0.0.0.0", port=5002, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=8080, debug=True, allow_unsafe_werkzeug=True)
 

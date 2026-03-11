@@ -274,7 +274,8 @@ class Game:
         active_can_act = [i for i in range(n) if not self.players[i].has_folded and not self.players[i].is_all_in]
         if not active_can_act:
             all_in_indices = [i for i in range(n) if not self.players[i].has_folded and self.players[i].is_all_in]
-            if self.insurance_enabled and len(all_in_indices) >= 2:
+            # 只在翻牌圈或转牌圈提供保险（河牌前）
+            if self.insurance_enabled and len(all_in_indices) >= 2 and self.stage in ('flop', 'turn'):
                 leading_idx, equities = self._compute_equity(all_in_indices)
                 if leading_idx is not None:
                     equity = equities.get(leading_idx, 0)
@@ -367,8 +368,9 @@ class Game:
             premium_amount = min(premium_amount, leader.chips)
             if premium_amount > 0:
                 leader.chips -= premium_amount
-                # 输时拿回 payout = premium / equity（公平赔率 1/E）
-                payout = premium_amount / max(equity, 0.01)
+                # 输时拿回 payout = premium / (1 - equity)（公平赔率 1/(1-E)）
+                # 例如：胜率 70%，赔率 = 1 / 0.3 = 3.33
+                payout = premium_amount / max(1 - equity, 0.01)
                 self.insurance_purchase = {
                     "player_idx": leading_idx,
                     "premium": premium_amount,
