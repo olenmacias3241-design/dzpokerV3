@@ -1,6 +1,13 @@
 # dzpokerV3 项目状态跟踪
 
-**更新时间：** 2026-03-10 08:58
+**更新时间：** 2026-03-12
+
+---
+
+## ⚠️ 当前最大问题：前端观感差
+
+**产品反馈：** 整体做得烂，前端没法看。  
+**优先级：** 前端 Chat 优先做「观感与整体可用性提升」（见 TASKS.md 前端任务表），再做功能补全。参考 docs/requirements/09_ui_ux_animations.md、PROJECT_STATUS 高优先级 UI 要求；目标：能看、好用、有基本视觉层次，PC+手机都要能看。
 
 ---
 
@@ -38,7 +45,7 @@
 - [ ] **小黄**：重新设计 UI 界面（当前界面过于简陋）
   - **必须兼容手机和 PC 端**（响应式设计）
   - 参考传奇扑克的视觉风格
-  - 参考 `specs/09_ui_ux_animations.md` 的"数字丝绒"主题
+  - 参考 `docs/requirements/09_ui_ux_animations.md` 的"数字丝绒"主题
   - 实现发牌、下注、比牌动画
   - 优化牌桌布局和视觉效果
   - 移动端触控优化（按钮最小 44x44px）
@@ -98,9 +105,9 @@
 
 ## 🔗 相关文档
 
-- [项目概述](./specs/00_overview.md)
+- [项目概述](./docs/requirements/00_overview.md)
 - [架构说明](./ARCHITECTURE.md)
-- [API 定义](./specs/05_api_definitions.md)
-- [数据库 Schema](./specs/06_database_schema.md)
-- [UI/UX 规格](./specs/04_game_table_ui_ux.md)
-- [动画设计](./specs/09_ui_ux_animations.md)
+- [API 定义](./docs/requirements/05_api_definitions.md)
+- [数据库 Schema](./docs/requirements/06_database_schema.md)
+- [UI/UX 规格](./docs/requirements/04_game_table_ui_ux.md)
+- [动画设计](./docs/requirements/09_ui_ux_animations.md)

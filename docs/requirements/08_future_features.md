@@ -6,12 +6,11 @@
   - 好友系统 (添加/删除/搜索好友)
   - 好友在线状态显示
   - 邀请好友加入牌桌
+  - **约局模式**：见 **docs/requirements/13_scheduled_game_mode.md**（创建预约牌局、定时/满人即开、邀请链接、俱乐部内约局）
 
 - **V2.0 - 锦标赛 (Tournaments)**
-  - SNG (Sit & Go) 比赛模式
-  - MTT (Multi-Table Tournament) 比赛模式
-  - 比赛报名大厅
-  - 盲注自动升级结构
+  - 完整规格见 **docs/requirements/12_tournaments_sng_mtt.md**：SNG（坐满即开）、MTT（多桌定时赛）、报名/Late Reg、盲注结构、换桌合桌、决赛桌、奖励圈与泡沫、Hand-for-Hand、可选重购/加购。
+  - 比赛报名大厅、盲注自动升级结构
 
 - **V2.5 - 个性化与商店**
   - 虚拟道具商店 (牌桌主题、卡牌背面、表情包)
@@ -20,4 +19,4 @@
 - **V3.0 - 高级功能**
   - 牌局回顾系统 (可查看历史手牌的完整过程)
   - 详细的个人数据分析面板
-  - 俱乐部功能 (玩家可创建自己的扑克俱乐部)
+  - 俱乐部：见 **docs/requirements/11_club_design.md**

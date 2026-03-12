@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}赛事大厅 · DZPoker{% endblock %}
+{% block content %}
+<div class="tournament-lobby-page">
+    <h1 class="page-title">赛事大厅</h1>
+    <div id="lobby-loading" class="panel">加载中…</div>
+    <div id="lobby-error" class="panel panel-error" style="display: none;">
+        <p id="lobby-error-text"></p>
+        <a href="/tournaments">返回锦标赛列表</a>
+    </div>
+    <div id="lobby-content" style="display: none;">
+        <div class="panel tournament-lobby-header">
+            <h2 id="lobby-tournament-name"></h2>
+            <div class="lobby-meta">
+                <span>级别 <span id="lobby-level"></span></span>
+                <span>剩余 <span id="lobby-players-left"></span> 人</span>
+                <span id="lobby-countdown">下一级别 <span id="lobby-level-time"></span></span>
+            </div>
+            <p id="lobby-my-table" class="lobby-my-table"></p>
+            <a href="/tournament/{{ tournament_id }}" class="btn btn-secondary">赛事详情</a>
+        </div>
+        <div class="panel">
+            <h3>牌桌列表</h3>
+            <div id="lobby-tables-list" class="lobby-tables-list"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+    var tournamentId = {{ tournament_id }};
+    var apiBase = (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl('') : '';
+    var token = (window.authGetToken && window.authGetToken()) || localStorage.getItem('token') || '';
+    var loadingEl = document.getElementById('lobby-loading');
+    var errorEl = document.getElementById('lobby-error');
+    var contentEl = document.getElementById('lobby-content');
+    var errorTextEl = document.getElementById('lobby-error-text');
+
+    fetch(apiBase + '/api/tournaments/' + tournamentId, { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
+        .then(function(r) {
+            if (r.status === 404) {
+                errorTextEl.textContent = '赛事不存在或锦标赛接口即将上线。';
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                return null;
+            }
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.error) {
+                errorTextEl.textContent = data.error;
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                return;
+            }
+            loadingEl.style.display = 'none';
+            contentEl.style.display = 'block';
+            document.getElementById('lobby-tournament-name').textContent = data.name || '赛事';
+            document.getElementById('lobby-level').textContent = (data.currentLevelIndex != null ? data.currentLevelIndex + 1 : 1);
+            document.getElementById('lobby-players-left').textContent = data.playersLeft != null ? data.playersLeft : '—';
+            document.getElementById('lobby-level-time').textContent = data.levelTimeLeft != null ? data.levelTimeLeft + ' 分钟' : '—';
+            var tables = data.tables || [];
+            var listEl = document.getElementById('lobby-tables-list');
+            listEl.innerHTML = '';
+            if (tables.length === 0) {
+                listEl.innerHTML = '<p class="muted">暂无牌桌数据（赛事可能未开赛或已结束）</p>';
+            } else {
+                tables.forEach(function(t) {
+                    var div = document.createElement('div');
+                    div.className = 'lobby-table-card';
+                    div.innerHTML = '桌 ' + (t.tableNumber || t.id) + ' · ' + (t.playersCount || 0) + ' 人';
+                    listEl.appendChild(div);
+                });
+            }
+            if (data.myTableNumber != null) {
+                document.getElementById('lobby-my-table').textContent = '您的座位：桌 ' + data.myTableNumber + (data.mySeat != null ? ' 座位 ' + (data.mySeat + 1) : '');
+                document.getElementById('lobby-my-table').style.display = 'block';
+            }
+        })
+        .catch(function() {
+            errorTextEl.textContent = '网络错误';
+            loadingEl.style.display = 'none';
+            errorEl.style.display = 'block';
+        });
+})();
+</script>
+{% endblock %}

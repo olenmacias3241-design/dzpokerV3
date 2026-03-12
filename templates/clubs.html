@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}俱乐部 · DZPoker{% endblock %}
+{% block content %}
+<div class="clubs-page">
+    <h1 class="page-title">俱乐部</h1>
+    <div class="panel clubs-actions">
+        <button type="button" id="create-club-btn" class="btn btn-primary">创建俱乐部</button>
+    </div>
+    <div id="create-club-form" class="panel" style="display: none;">
+        <h2>新建俱乐部</h2>
+        <form id="create-club-frm">
+            <div class="form-group">
+                <label for="club-name">名称 <span class="required">*</span></label>
+                <input type="text" id="club-name" name="name" required maxlength="64" placeholder="2–30 字">
+            </div>
+            <div class="form-group">
+                <label for="club-desc">简介（选填）</label>
+                <textarea id="club-desc" name="description" rows="3" maxlength="512" placeholder="俱乐部简介"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">创建</button>
+            <button type="button" id="cancel-create-btn" class="btn btn-secondary">取消</button>
+        </form>
+        <p id="create-club-msg" class="form-msg"></p>
+    </div>
+    <div class="panel">
+        <h2>俱乐部列表</h2>
+        <p id="clubs-loading" class="clubs-loading">加载中…</p>
+        <p id="clubs-empty" class="clubs-empty" style="display: none;">暂无俱乐部，点击上方「创建俱乐部」创建。</p>
+        <div id="clubs-list" class="clubs-list"></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/clubs.js"></script>
+{% endblock %}

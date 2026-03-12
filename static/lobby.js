@@ -104,23 +104,53 @@
 
     updateLoginUI();
 
+    /** 大厅顶部显示筹码余额（与导航栏一致，来自 /api/auth/me） */
+    function updateBalanceDisplay() {
+        var token = getToken();
+        if (!token || !document.getElementById("balance-display")) return;
+        fetch(apiUrl("/api/auth/me"), { headers: { "Authorization": "Bearer " + token } })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.ok && data.userProfile && data.userProfile.coinsBalance != null) {
+                    document.getElementById("balance-display").textContent = Number(data.userProfile.coinsBalance).toLocaleString();
+                } else {
+                    document.getElementById("balance-display").textContent = "—";
+                }
+            })
+            .catch(function () {
+                if (document.getElementById("balance-display")) document.getElementById("balance-display").textContent = "—";
+            });
+    }
+    updateBalanceDisplay();
+
     function escapeHtml(s) {
         var div = document.createElement("div");
         div.textContent = s;
         return div.innerHTML;
     }
 
-    /** 无牌桌时显示的 3 张静态示例卡片 HTML（与 lobby 模板一致） */
+    /** 无牌桌时显示的占位卡片（扑克大厅用语） */
+    function seatDotsHtml(seated, maxP) {
+        var html = '<span class="seat-dots">';
+        for (var i = 0; i < maxP; i++) {
+            html += '<span class="' + (i < seated ? 'filled' : 'empty') + '">●</span>';
+        }
+        html += '</span>';
+        return html;
+    }
     var STATIC_CARDS_HTML =
         '<div class="table-card">' +
-        '<div class="card-header"><span class="card-blinds-label">赌注</span><span class="card-blinds-value">$1M/$2M</span><span class="card-buyin">买入: $40M - $200M</span></div>' +
-        '<div class="card-body"><div class="card-row"><span><i class="icon-watch"></i> 手表点数</span><span class="value">X 100</span></div><div class="card-row"><span><i class="icon-challenge"></i> 挑战</span><span class="value">3</span></div><div class="card-row"><span><i class="icon-suits"></i> 扑克花色</span><span class="value check">✔</span></div></div></div>' +
+        '<div class="card-header"><span class="card-blinds-label">盲注</span><span class="card-blinds-value">5/10</span><span class="card-buyin">买入 100–1000</span></div>' +
+        '<div class="card-body"><div class="card-row"><span>人数</span><span class="value">' + seatDotsHtml(2, 6) + ' 2/6</span></div><div class="card-row"><span>状态</span><span class="value check">等待中</span></div></div>' +
+        '<div class="card-actions"><span class="table-status playing">对局中</span></div></div>' +
         '<div class="table-card active">' +
-        '<div class="card-header"><span class="card-blinds-label">赌注</span><span class="card-blinds-value">$5M/$10M</span><span class="card-buyin">买入: $200M - $1B</span></div>' +
-        '<div class="card-body"><div class="card-row"><span><i class="icon-watch"></i> 手表点数</span><span class="value">X 150</span></div><div class="card-row"><span><i class="icon-challenge"></i> 挑战</span><span class="value">4</span></div><div class="card-row"><span><i class="icon-suits"></i> 扑克花色</span><span class="value check">✔</span></div></div></div>' +
+        '<div class="card-header"><span class="card-blinds-label">盲注</span><span class="card-blinds-value">10/20</span><span class="card-buyin">买入 200–2000</span></div>' +
+        '<div class="card-body"><div class="card-row"><span>人数</span><span class="value">' + seatDotsHtml(4, 6) + ' 4/6</span></div><div class="card-row"><span>状态</span><span class="value check">等待中</span></div></div>' +
+        '<div class="card-actions"><button type="button" class="join-btn">入座</button></div></div>' +
         '<div class="table-card">' +
-        '<div class="card-header"><span class="card-blinds-label">赌注</span><span class="card-blinds-value">$10M/$20M</span><span class="card-buyin">买入: $400M - $2B</span></div>' +
-        '<div class="card-body"><div class="card-row"><span><i class="icon-watch"></i> 手表点数</span><span class="value">X 300</span></div><div class="card-row"><span><i class="icon-challenge"></i> 挑战</span><span class="value">6</span></div><div class="card-row"><span><i class="icon-suits"></i> 扑克花色</span><span class="value check">✔</span></div></div></div>';
+        '<div class="card-header"><span class="card-blinds-label">盲注</span><span class="card-blinds-value">25/50</span><span class="card-buyin">买入 500–5000</span></div>' +
+        '<div class="card-body"><div class="card-row"><span>人数</span><span class="value">' + seatDotsHtml(6, 6) + ' 6/6</span></div><div class="card-row"><span>状态</span><span class="value">对局中</span></div></div>' +
+        '<div class="card-actions"><span class="table-status playing">对局中</span></div></div>';
 
     function renderTables(tablesData) {
         if (!tableListEl) return;
@@ -131,28 +161,30 @@
         tableListEl.innerHTML = tablesData.map(function (t, idx) {
             var sb = (t.blinds && t.blinds.sb != null) ? t.blinds.sb : 0;
             var bb = (t.blinds && t.blinds.bb != null) ? t.blinds.bb : 0;
-            var blindsText = "$" + (sb >= 1e6 ? (sb / 1e6) + "M" : sb) + "/$" + (bb >= 1e6 ? (bb / 1e6) + "M" : bb);
+            var blindsText = (sb >= 1e6 ? (sb / 1e6) + "M" : sb) + "/" + (bb >= 1e6 ? (bb / 1e6) + "M" : bb);
             var minBuy = (t.minBuyIn != null) ? (t.minBuyIn >= 1e6 ? (t.minBuyIn / 1e6) + "M" : t.minBuyIn) : "?";
             var maxBuy = (t.maxBuyIn != null) ? (t.maxBuyIn >= 1e6 ? (t.maxBuyIn / 1e6) + "M" : t.maxBuyIn) : "?";
-            var buyInText = "买入: $" + minBuy + " - $" + maxBuy;
+            var buyInText = "买入 " + minBuy + "–" + maxBuy;
             var isActive = idx === 0;
             var statusClass = t.status === "waiting" ? "waiting" : "playing";
             var statusText = t.status === "waiting" ? "等待中" : "对局中";
-            var canJoin = t.status === "waiting" && (t.playerCount || 0) < (t.maxPlayers || 6);
+            var seated = t.seatedPlayers != null ? t.seatedPlayers : (t.playerCount != null ? t.playerCount : 0);
+            var maxP = t.maxPlayers != null ? t.maxPlayers : 6;
+            var canJoin = t.status === "waiting" && seated < maxP;
             var joinBtn = canJoin
-                ? "<button type='button' class='btn btn-amber join-btn' data-table-id='" + t.tableId + "'>进入牌桌</button>"
+                ? "<button type='button' class='btn btn-amber join-btn' data-table-id='" + t.tableId + "'>入座</button>"
                 : "<span class='table-status " + statusClass + "'>" + statusText + "</span>";
+            var dotsHtml = seatDotsHtml(seated, maxP);
             return (
                 "<div class='table-card" + (isActive ? " active" : "") + "' data-table-id='" + t.tableId + "'>" +
                 "<div class='card-header'>" +
-                "<span class='card-blinds-label'>赌注</span>" +
+                "<span class='card-blinds-label'>盲注</span>" +
                 "<span class='card-blinds-value'>" + escapeHtml(blindsText) + "</span>" +
                 "<span class='card-buyin'>" + escapeHtml(buyInText) + "</span>" +
                 "</div>" +
                 "<div class='card-body'>" +
-                "<div class='card-row'><span><i class='icon-watch'></i> 手表点数</span><span class='value'>X " + (t.watchPoints || 100) + "</span></div>" +
-                "<div class='card-row'><span><i class='icon-challenge'></i> 挑战</span><span class='value'>" + (t.seatedPlayers || t.playerCount || 0) + " / " + (t.maxPlayers || 6) + "</span></div>" +
-                "<div class='card-row'><span><i class='icon-suits'></i> 扑克花色</span><span class='value check'>✔</span></div>" +
+                "<div class='card-row'><span>人数</span><span class='value'>" + dotsHtml + " " + seated + "/" + maxP + "</span></div>" +
+                "<div class='card-row'><span>状态</span><span class='value" + (t.status === "waiting" ? " check" : "") + "'>" + statusText + "</span></div>" +
                 "</div>" +
                 "<div class='card-actions'>" + joinBtn + "</div>" +
                 "</div>"
@@ -164,13 +196,30 @@
                 var tableId = this.getAttribute("data-table-id");
                 if (!tableId) return;
                 ensureToken().then(function (token) {
-                    if (quickStartMsg) quickStartMsg.textContent = "";
-                    fetch(apiUrl("/api/tables/" + tableId))
-                        .then(function (res) { return parseJsonRes(res, apiUrl("/api/tables/" + tableId)); })
+                    if (quickStartMsg) quickStartMsg.textContent = "正在加入…";
+                    var tableUrl = apiUrl("/api/tables/" + tableId);
+                    var tableUrlWithToken = tableUrl + (tableUrl.indexOf("?") >= 0 ? "&" : "?") + "token=" + encodeURIComponent(token);
+                    fetch(tableUrlWithToken)
+                        .then(function (res) { return parseJsonRes(res, tableUrlWithToken); })
                         .then(function (state) {
-                            var seat = state.seats.indexOf(null);
+                            if (state && state.error) {
+                                if (quickStartMsg) quickStartMsg.textContent = state.error;
+                                return;
+                            }
+                            if (!state || !Array.isArray(state.seats)) {
+                                if (quickStartMsg) quickStartMsg.textContent = "无法获取座位信息";
+                                return;
+                            }
+                            var seat = -1;
+                            for (var i = 0; i < state.seats.length; i++) {
+                                var s = state.seats[i];
+                                if (s == null || s === undefined || (typeof s === "object" && s.userId == null)) {
+                                    seat = i;
+                                    break;
+                                }
+                            }
                             if (seat < 0) {
-                                quickStartMsg.textContent = "该桌已满";
+                                if (quickStartMsg) quickStartMsg.textContent = "该桌已满";
                                 return;
                             }
                             return fetch(apiUrl("/api/tables/" + tableId + "/sit"), {
@@ -178,12 +227,18 @@
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ token: token, seat: seat })
                             }).then(function (r) {
-                                if (!r.ok) return parseJsonRes(r, apiUrl("/api/tables/" + tableId + "/sit")).then(function (d) { throw new Error(d.error || "加入失败"); });
+                                if (!r.ok) {
+                                    return parseJsonRes(r, apiUrl("/api/tables/" + tableId + "/sit")).then(function (d) {
+                                        throw new Error(d.error || d.message || "加入失败");
+                                    });
+                                }
+                                return r.json();
+                            }).then(function () {
                                 window.location.href = "/?table=" + tableId + "&token=" + encodeURIComponent(token);
                             });
                         })
-                        .catch(function () {
-                            quickStartMsg.textContent = "加入失败";
+                        .catch(function (err) {
+                            if (quickStartMsg) quickStartMsg.textContent = (err && err.message) ? err.message : "加入失败";
                         });
                 });
             });
@@ -191,11 +246,13 @@
     }
 
     function loadTables() {
+        if (!tableListEl) return;
         var blinds = filterBlinds ? filterBlinds.value : "";
         var players = filterPlayers ? filterPlayers.value : "";
         var url = apiUrl("/api/lobby/tables");
         if (blinds) url += "?blinds=" + encodeURIComponent(blinds);
         if (players) url += (url.indexOf("?") >= 0 ? "&" : "?") + "players=" + encodeURIComponent(players);
+        tableListEl.innerHTML = "<p class='lobby-loading'>加载中…</p>";
         fetch(url)
             .then(function (res) { return parseJsonRes(res, url); })
             .then(function (data) {
@@ -251,14 +308,18 @@
         }
 
         document.querySelectorAll("#blind-presets .preset-btn").forEach(function (btn) {
+            var sb = parseInt(btn.getAttribute("data-sb"), 10);
+            var bb = parseInt(btn.getAttribute("data-bb"), 10);
+            if (!sb || !bb) return;
             btn.addEventListener("click", function () {
-                var sb = parseInt(this.getAttribute("data-sb"), 10);
-                var bb = parseInt(this.getAttribute("data-bb"), 10);
-                if (!sb || !bb) return;
-                document.getElementById("ct-sb").value = sb;
-                document.getElementById("ct-bb").value = bb;
-                document.getElementById("ct-min-buy").value = Math.max(100, bb * 10);
-                document.getElementById("ct-max-buy").value = Math.max(10000, bb * 200);
+                var sbEl = document.getElementById("ct-sb");
+                var bbEl = document.getElementById("ct-bb");
+                if (sbEl) sbEl.value = sb;
+                if (bbEl) bbEl.value = bb;
+                var minEl = document.getElementById("ct-min-buy");
+                var maxEl = document.getElementById("ct-max-buy");
+                if (minEl) minEl.value = Math.max(100, bb * 10);
+                if (maxEl) maxEl.value = Math.max(10000, bb * 200);
             });
         });
 
@@ -266,41 +327,39 @@
             createForm.addEventListener("submit", function (e) {
                 e.preventDefault();
                 ensureToken().then(function (token) {
-                    var sb = parseInt(document.getElementById("ct-sb").value, 10) || 5;
-                    var bb = parseInt(document.getElementById("ct-bb").value, 10) || 10;
+                    var nameEl = document.getElementById("ct-name");
+                    var sbEl = document.getElementById("ct-sb");
+                    var bbEl = document.getElementById("ct-bb");
+                    var playersEl = document.getElementById("ct-players");
+                    var sb = parseInt(sbEl && sbEl.value, 10) || 5;
+                    var bb = parseInt(bbEl && bbEl.value, 10) || 10;
                     var payload = {
-                        tableName: (document.getElementById("ct-name").value || "").trim() || undefined,
+                        tableName: (nameEl && nameEl.value ? nameEl.value.trim() : "") || undefined,
                         sb: sb,
                         bb: bb,
-                        maxPlayers: parseInt(document.getElementById("ct-players").value, 10) || 6,
-                        defaultChips: parseInt(document.getElementById("ct-chips").value, 10) || 1000,
-                        insurance: !!(document.getElementById("ct-insurance") && document.getElementById("ct-insurance").checked)
+                        maxPlayers: parseInt(playersEl && playersEl.value, 10) || 6
                     };
-                var minBuy = document.getElementById("ct-min-buy").value.trim();
-                var maxBuy = document.getElementById("ct-max-buy").value.trim();
-                if (minBuy) payload.minBuyIn = parseInt(minBuy, 10);
-                if (maxBuy) payload.maxBuyIn = parseInt(maxBuy, 10);
 
-                if (createMsg) createMsg.textContent = "创建中…";
-                var createUrl = apiUrl("/api/lobby/tables");
-                fetch(createUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                })
-                    .then(function (res) { return parseJsonRes(res, createUrl); })
-                    .then(function (data) {
-                        if (data.tableId == null) {
-                            if (createMsg) createMsg.textContent = data.error || "创建失败";
-                            return;
-                        }
-                        if (createPanel) createPanel.style.display = "none";
-                        if (quickStartMsg) quickStartMsg.textContent = "已创建牌桌，正在进入…";
-                        window.location.href = "/?table=" + data.tableId + "&token=" + encodeURIComponent(token);
+                    if (createMsg) createMsg.textContent = "创建中…";
+                    var createUrl = apiUrl("/api/lobby/tables");
+                    fetch(createUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
                     })
-                    .catch(function (err) {
-                        if (createMsg) createMsg.textContent = err.message || "创建失败";
-                    });
+                        .then(function (res) { return parseJsonRes(res, createUrl); })
+                        .then(function (data) {
+                            if (data.tableId == null) {
+                                if (createMsg) createMsg.textContent = (data.error || "创建失败");
+                                return;
+                            }
+                            if (createPanel) createPanel.style.display = "none";
+                            if (quickStartMsg) quickStartMsg.textContent = "已创建牌桌，正在进入…";
+                            window.location.href = "/?table=" + data.tableId + "&token=" + encodeURIComponent(token);
+                        })
+                        .catch(function (err) {
+                            if (createMsg) createMsg.textContent = (err && err.message) || "创建失败";
+                        });
                 });
             });
         }
@@ -314,17 +373,7 @@
         loadTablesTimer = setTimeout(loadTables, 300);
     }
 
-    ensureToken().then(function () { loadTablesDebounced(); }).catch(function () {
+    ensureToken().then(function () { loadTablesDebounced(); updateBalanceDisplay(); }).catch(function () {
         if (tableListEl) tableListEl.innerHTML = "<p style='color: var(--text-muted);'>无法连接，请刷新重试。</p>";
-    });
-
-    document.addEventListener("DOMContentLoaded", function() {
-        var btn = document.getElementById("create-table-btn");
-        if (btn) {
-            btn.addEventListener("click", function () {
-                var createPanel = document.getElementById("create-table-panel");
-                if (createPanel) createPanel.style.display = "block";
-            });
-        }
     });
 })();

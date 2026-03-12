@@ -84,6 +84,37 @@ def register_page():
     return render_template("register.html")
 
 
+@app.route("/profile")
+def profile_page():
+    return render_template("profile.html")
+
+
+@app.route("/clubs")
+def clubs_page():
+    return render_template("clubs.html")
+
+
+@app.route("/club/<int:club_id>")
+def club_detail_page(club_id):
+    return render_template("club_detail.html", club_id=club_id)
+
+
+@app.route("/tournaments")
+def tournaments_page():
+    return render_template("tournaments.html")
+
+
+@app.route("/tournament/<int:tournament_id>")
+def tournament_detail_page(tournament_id):
+    return render_template("tournament_detail.html", tournament_id=tournament_id)
+
+
+@app.route("/tournament/<int:tournament_id>/lobby")
+def tournament_lobby_page(tournament_id):
+    return render_template("tournament_lobby.html", tournament_id=tournament_id)
+
+
+# ---------- API: 登录/注册 ----------
 @app.route("/api/login", methods=["POST"])
 def api_login():
     """游客登录（仅用户名，无密码），返回 token。"""
@@ -178,6 +209,104 @@ def api_user_profile(user_id):
     return jsonify({"ok": True, "userProfile": user_to_profile(user)})
 
 
+# ---------- 锦标赛（docs/requirements/12） ----------
+def _tournament_user_id():
+    """从 JWT 或 token 解析出 DB user_id（整数），用于锦标赛报名。"""
+    token = _auth_token()
+    if not token:
+        return None, "未登录"
+    from services import auth
+    payload = auth.decode_jwt(token)
+    if payload and "user_id" in payload:
+        return int(payload["user_id"]), None
+    user = tables.get_user(token)
+    if user and isinstance(user.get("user_id"), int):
+        return user["user_id"], None
+    return None, "锦标赛需使用账号登录"
+
+
+@app.route("/api/tournaments")
+def api_tournaments_list():
+    """赛事列表；支持 ?status= &type= 筛选。"""
+    db = SessionLocal()
+    try:
+        from services import tournaments
+        status = request.args.get("status")
+        type_ = request.args.get("type")
+        lst = tournaments.list_tournaments(db, status=status, type_=type_)
+        out = []
+        for t in lst:
+            reg_count = tournaments.count_registrations(db, t.id)
+            out.append({
+                "id": t.id,
+                "name": t.name,
+                "type": t.type,
+                "status": t.status,
+                "buy_in": t.buy_in,
+                "fee": t.fee,
+                "starting_stack": t.starting_stack,
+                "max_players": t.max_players,
+                "min_players_to_start": t.min_players_to_start,
+                "registered_count": reg_count,
+                "starts_at": t.starts_at.isoformat() if t.starts_at else None,
+            })
+        return jsonify(out)
+    finally:
+        db.close()
+
+
+@app.route("/api/tournaments/<int:tournament_id>")
+def api_tournament_detail(tournament_id):
+    """赛事详情与当前状态。"""
+    db = SessionLocal()
+    try:
+        from services import tournaments
+        state = tournaments.get_tournament_state(db, tournament_id)
+        if not state:
+            return jsonify({"error": "赛事不存在"}), 404
+        return jsonify(state)
+    finally:
+        db.close()
+
+
+@app.route("/api/tournaments/<int:tournament_id>/register", methods=["POST"])
+def api_tournament_register(tournament_id):
+    """报名：扣 buy_in + fee。"""
+    user_id, err = _tournament_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        from services import tournaments
+        from services.auth import get_user_by_id
+        user = get_user_by_id(db, user_id)
+        balance = (user.coins_balance if user else 0) or 0
+        reg, err = tournaments.register(db, tournament_id, user_id, balance)
+        if err:
+            return jsonify({"error": err}), 400
+        state = tournaments.get_tournament_state(db, tournament_id)
+        return jsonify({"ok": True, "tournament": state})
+    finally:
+        db.close()
+
+
+@app.route("/api/tournaments/<int:tournament_id>/unregister", methods=["POST"])
+def api_tournament_unregister(tournament_id):
+    """取消报名（仅 Registration 阶段），退款。"""
+    user_id, err = _tournament_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        from services import tournaments
+        ok, err = tournaments.unregister(db, tournament_id, user_id)
+        if not ok:
+            return jsonify({"error": err or "取消失败"}), 400
+        return jsonify({"ok": True})
+    finally:
+        db.close()
+
+
 # ---------- 大厅 ----------
 @app.route("/api/lobby/tables")
 def api_lobby_tables():
@@ -262,9 +391,9 @@ def api_table_sit(table_id):
         if not ok:
             return jsonify({"error": msg}), 400
 
-        # 玩家入座后自动让机器人填满剩余座位并开局
+        # 玩家入座后自动让机器人填满剩余座位并开局（延迟 1 秒后执行）
         import bots
-        bots.fill_table_with_bots(table_id, delay=2.0)
+        bots.fill_table_with_bots(table_id, delay=1.0)
 
         return jsonify({"tableId": table_id, "seatNumber": seat})
     except Exception as err:
@@ -391,13 +520,22 @@ def api_table_deal_next(table_id):
     if seat < 0:
         return jsonify({"error": "您未在此桌"}), 403
     t = tables.TABLES.get(table_id)
+    deal_phase, deal_cards = None, []
     if t and t.get("game") and getattr(t["game"], "pending_insurance", None):
         ok, msg = tables.resolve_insurance(table_id, token, 0)
         if not ok and msg:
             return jsonify({"error": msg}), 400
     else:
-        tables.deal_next_street(table_id)
-    return jsonify(_game_state_for_seat(table_id, seat))
+        ok, msg, deal_phase, deal_cards = tables.deal_next_street(table_id)
+        if not ok:
+            return jsonify({"error": msg or "发牌失败"}), 400
+    resp_state = _game_state_for_seat(table_id, seat)
+    if not resp_state:
+        return jsonify({"error": "无法获取状态"}), 500
+    if deal_phase and deal_cards is not None:
+        resp_state["deal_phase"] = deal_phase
+        resp_state["deal_cards"] = deal_cards
+    return jsonify(resp_state)
 
 
 @app.route("/api/tables/<int:table_id>/insurance", methods=["POST"])
@@ -630,7 +768,12 @@ def ws_deal_next(data):
             emit("error", {"message": msg})
             return
     else:
-        tables.deal_next_street(table_id)
+        ok, msg, phase, new_cards = tables.deal_next_street(table_id)
+        if not ok:
+            emit("error", {"message": msg or "发牌失败"})
+            return
+        if phase and new_cards is not None:
+            emit("game:deal_phase", {"phase": phase, "cards": new_cards}, room=str(table_id))
     _broadcast_table_state(table_id)
 
 

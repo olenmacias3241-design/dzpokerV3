@@ -1,0 +1,11 @@
+---
+description: 项目全局约定与文档索引（README、架构、职责）
+alwaysApply: true
+---
+
+# dzpokerV3 项目上下文
+
+- **入口**：先读 `README.md`（文档结构、本地运行、前后端分离）和 `ARCHITECTURE.md`（服务端/客户端职责、数据流）。
+- **规格**：需求与接口在 `docs/requirements/` 下按编号排列；完整索引见 `docs/knowledge/README.md`。核心为 `03_game_table_core_logic.md`、`05_api_definitions.md`、`06_database_schema.md`；扩展为 10（钱包）、11（俱乐部）、12（锦标赛）。
+- **职责**：后端（app.py、tables.py、core/、database/）负责牌桌状态与游戏逻辑；前端（templates/、static/）只消费 API 与 WebSocket，不维护权威状态。
+- **协作**：登录 → 大厅（牌桌列表/创建/加入）→ 牌桌页（单桌 + token + 单 WebSocket room）。详见 ARCHITECTURE.md。

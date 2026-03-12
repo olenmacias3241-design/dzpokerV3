@@ -156,7 +156,7 @@
 
 ### 2. 动画效果（高优先级）
 
-参考 `specs/09_ui_ux_animations.md`，必须实现：
+参考 `docs/requirements/09_ui_ux_animations.md`，必须实现：
 
 1. **发牌动画**
    - 卡牌从牌堆飞向玩家
@@ -407,7 +407,7 @@
 
 ## 📂 相关文件
 
-- **设计规格：** `specs/09_ui_ux_animations.md`
+- **设计规格：** `docs/requirements/09_ui_ux_animations.md`
 - **当前代码：**
   - `templates/index.html` - 牌桌页面
   - `templates/lobby.html` - 大厅页面
@@ -469,7 +469,7 @@
 ## 🚀 开始步骤
 
 1. **先看设计规格**
-   - 阅读 `specs/09_ui_ux_animations.md`
+   - 阅读 `docs/requirements/09_ui_ux_animations.md`
    - 理解"数字丝绒"主题
 
 2. **找参考图**

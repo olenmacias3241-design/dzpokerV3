@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}赛事详情 · DZPoker{% endblock %}
+{% block content %}
+<div class="tournament-detail-page">
+    <h1 class="page-title">赛事详情</h1>
+    <p id="tournament-loading" class="tournaments-loading">加载中…</p>
+    <div id="tournament-error" class="panel panel-error" style="display: none;">
+        <p id="tournament-error-text"></p>
+        <a href="/tournaments">返回锦标赛列表</a>
+    </div>
+    <div id="tournament-content" class="panel" style="display: none;">
+        <div class="tournament-header">
+            <h2 id="tournament-name" class="tournament-name"></h2>
+            <span id="tournament-type-badge" class="tournament-type-badge"></span>
+            <span id="tournament-status-badge" class="tournament-status-badge"></span>
+        </div>
+        <dl class="tournament-info">
+            <dt>买入</dt>
+            <dd id="tournament-buyin"></dd>
+            <dt>起始筹码</dt>
+            <dd id="tournament-stack"></dd>
+            <dt>人数</dt>
+            <dd id="tournament-players"></dd>
+            <dt>开赛时间</dt>
+            <dd id="tournament-starts"></dd>
+            <dt>Late Reg</dt>
+            <dd id="tournament-latereg"></dd>
+        </dl>
+        <div class="tournament-actions">
+            <button type="button" id="register-btn" class="btn btn-primary" style="display: none;">报名</button>
+            <button type="button" id="unregister-btn" class="btn btn-secondary" style="display: none;">取消报名</button>
+            <a href="#" id="enter-lobby-link" class="btn btn-primary" style="display: none;">进入赛事大厅</a>
+            <a href="/tournaments" class="btn btn-secondary">返回列表</a>
+        </div>
+        <p id="tournament-msg" class="form-msg"></p>
+        <div class="tournament-blinds" id="tournament-blinds-section" style="display: none;">
+            <h3>盲注结构</h3>
+            <div id="tournament-blinds-list"></div>
+        </div>
+        <div class="tournament-payouts" id="tournament-payouts-section" style="display: none;">
+            <h3>奖励分配</h3>
+            <div id="tournament-payouts-list"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/tournament_detail.js"></script>
+{% endblock %}

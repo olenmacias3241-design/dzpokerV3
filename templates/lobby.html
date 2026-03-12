@@ -3,131 +3,69 @@
 
 {% block content %}
 <div class="lobby-container">
-
-    <div class="lobby-header">
+    <header class="lobby-header">
         <div class="player-balance">
             <span class="coin-icon" aria-hidden="true">🪙</span>
-            <span>1,234,567,890</span>
+            <span id="balance-display">—</span>
         </div>
-        <h1 class="lobby-title">德州扑克</h1>
-        <div class="header-actions">
-            <button class="btn-icon">?</button>
-            <button class="btn-icon">X</button>
+        <h1 class="lobby-title">德州扑克 · 大厅</h1>
+        <div class="header-actions lobby-quick-play-wrap">
+            <button type="button" id="quick-start-btn" class="btn-play-now">马上游玩</button>
+            <span id="quick-start-msg" class="quick-start-msg" aria-live="polite"></span>
+            <button class="btn-icon" type="button" aria-label="帮助">?</button>
+            <button class="btn-icon" type="button" aria-label="关闭">×</button>
         </div>
-    </div>
+    </header>
 
-    <div class="table-carousel-container">
-        <div class="carousel-arrow left">&lt;</div>
-        
-        <div class="table-list-scroll" id="table-list">
-            <!-- Static Example Card 1 (Inactive) -->
-            <div class="table-card">
-                <div class="card-header">
-                    <span class="card-blinds-label">赌注</span>
-                    <span class="card-blinds-value">$1M/$2M</span>
-                    <span class="card-buyin">买入: $40M - $200M</span>
-                </div>
-                <div class="card-body">
-                    <div class="card-row">
-                        <span><i class="icon-watch"></i> 手表点数</span>
-                        <span class="value">X 100</span>
-                    </div>
-                    <div class="card-row">
-                        <span><i class="icon-challenge"></i> 挑战</span>
-                        <span class="value">3</span>
-                    </div>
-                    <div class="card-row">
-                        <span><i class="icon-suits"></i> 扑克花色</span>
-                        <span class="value check">✔</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Static Example Card 2 (Active/Center) -->
-            <div class="table-card active">
-                 <div class="card-header">
-                    <span class="card-blinds-label">赌注</span>
-                    <span class="card-blinds-value">$5M/$10M</span>
-                    <span class="card-buyin">买入: $200M - $1B</span>
-                </div>
-                <div class="card-body">
-                    <div class="card-row">
-                        <span><i class="icon-watch"></i> 手表点数</span>
-                        <span class="value">X 150</span>
-                    </div>
-                    <div class="card-row">
-                        <span><i class="icon-challenge"></i> 挑战</span>
-                        <span class="value">4</span>
-                    </div>
-                    <div class="card-row">
-                        <span><i class="icon-suits"></i> 扑克花色</span>
-                        <span class="value check">✔</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Static Example Card 3 (Inactive) -->
-            <div class="table-card">
-                 <div class="card-header">
-                    <span class="card-blinds-label">赌注</span>
-                    <span class="card-blinds-value">$10M/$20M</span>
-                    <span class="card-buyin">买入: $400M - $2B</span>
-                </div>
-                <div class="card-body">
-                    <div class="card-row">
-                        <span><i class="icon-watch"></i> 手表点数</span>
-                        <span class="value">X 300</span>
-                    </div>
-                    <div class="card-row">
-                        <span><i class="icon-challenge"></i> 挑战</span>
-                        <span class="value">6</span>
-                    </div>
-                    <div class="card-row">
-                        <span><i class="icon-suits"></i> 扑克花色</span>
-                        <span class="value check">✔</span>
-                    </div>
-                </div>
-            </div>
-             <!-- lobby.js will append more (unstyled) items here -->
+    <section class="lobby-tables-wrap">
+        <h2 class="lobby-tables-title">牌桌列表</h2>
+        <div class="lobby-filters">
+            <label for="filter-blinds">盲注</label>
+            <select id="filter-blinds" aria-label="按盲注筛选">
+                <option value="">全部</option>
+                <option value="small">小</option>
+                <option value="medium">中</option>
+                <option value="high">高</option>
+            </select>
+            <label for="filter-players">人数</label>
+            <select id="filter-players" aria-label="按人数筛选">
+                <option value="">全部</option>
+                <option value="2">2 人</option>
+                <option value="6">6 人</option>
+                <option value="9">9 人</option>
+            </select>
+            <button type="button" id="filter-apply" class="btn btn-secondary">应用</button>
         </div>
+        <div class="table-carousel-container">
+            <button type="button" class="carousel-arrow left" aria-label="上一页">‹</button>
+            <div class="table-list-scroll" id="table-list" role="list">
+                <p class="lobby-loading">加载中…</p>
+            </div>
+            <button type="button" class="carousel-arrow right" aria-label="下一页">›</button>
+        </div>
+    </section>
 
-        <div class="carousel-arrow right">&gt;</div>
-    </div>
+    <footer class="lobby-footer">
+        <button type="button" id="create-table-btn" class="btn-icon-text">＋ 创建牌桌</button>
+        <button type="button" class="btn-icon-text">⚙ 设置</button>
+        <button type="button" class="btn-icon-text">🛒 购买筹码</button>
+    </footer>
 
-    <div class="lobby-footer">
-        <button class="btn-icon-text">
-            <i class="icon-settings"></i>
-            <span>牌桌设置</span>
-        </button>
-        <button id="create-table-btn" class="btn-icon-text">
-            <i class="icon-add"></i>
-            <span>创建牌桌</span>
-        </button>
-        <button class="btn-play-now">马上游玩</button>
-        <button class="btn-icon-text">
-            <i class="icon-store"></i>
-            <span>购买筹码</span>
-        </button>
-    </div>
-
-    <!-- 创建牌桌表单 -->
-    <div id="create-table-panel" style="display:none; position:fixed; top:20%; left:20%; width:60%; background:#333; padding:20px; border-radius:10px;">
+    <div id="create-table-panel" role="dialog" aria-modal="true" aria-labelledby="create-table-title" style="display:none;">
         <form id="create-table-form">
-            <h3>创建牌桌</h3>
-            <input type="text" id="ct-name" placeholder="牌桌名称">
-            <input type="number" id="ct-sb" placeholder="小盲">
-            <input type="number" id="ct-bb" placeholder="大盲">
-            <input type="number" id="ct-players" placeholder="人数">
-            <button type="submit">提交</button>
+            <h3 id="create-table-title">创建牌桌</h3>
+            <input type="text" id="ct-name" placeholder="牌桌名称（可选）" autocomplete="off">
+            <input type="number" id="ct-sb" placeholder="小盲" min="1" value="5">
+            <input type="number" id="ct-bb" placeholder="大盲" min="1" value="10">
+            <input type="number" id="ct-players" placeholder="人数" min="2" max="9" value="6">
+            <button type="submit">创建并进入</button>
             <button type="button" id="create-table-cancel">取消</button>
             <p id="create-table-msg"></p>
         </form>
     </div>
-
 </div>
 {% endblock %}
 
 {% block scripts %}
-{# We keep the original script so it still works, even if the new elements are unstyled #}
 <script src="/static/lobby.js"></script>
 {% endblock %}

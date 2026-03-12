@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}锦标赛 · DZPoker{% endblock %}
+{% block content %}
+<div class="tournaments-page">
+    <h1 class="page-title">锦标赛</h1>
+    <div class="panel tournaments-filters">
+        <span class="filter-label">类型</span>
+        <button type="button" class="filter-btn active" data-type="all">全部</button>
+        <button type="button" class="filter-btn" data-type="SNG">SNG</button>
+        <button type="button" class="filter-btn" data-type="MTT">MTT</button>
+    </div>
+    <div class="panel">
+        <p id="tournaments-loading" class="tournaments-loading">加载中…</p>
+        <p id="tournaments-empty" class="tournaments-empty" style="display: none;">暂无赛事。锦标赛功能即将上线，敬请期待。</p>
+        <p id="tournaments-error" class="form-msg error" style="display: none;"></p>
+        <div id="tournaments-list" class="tournaments-list"></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/tournaments.js"></script>
+{% endblock %}

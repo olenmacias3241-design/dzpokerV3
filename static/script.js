@@ -141,6 +141,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const chatToggleBtn = document.getElementById('chat-toggle-btn');
+    const chatPanel = document.getElementById('chat-panel');
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatToggleBtn && chatPanel) {
+        chatToggleBtn.addEventListener('click', function () {
+            const visible = chatPanel.style.display === 'block';
+            chatPanel.style.display = visible ? 'none' : 'block';
+            chatToggleBtn.setAttribute('aria-expanded', visible ? 'false' : 'true');
+        });
+    }
+    function appendChatLine(seatLabel, text, isMe) {
+        if (!chatMessages) return;
+        const div = document.createElement('div');
+        div.className = 'chat-line' + (isMe ? ' chat-line-me' : '');
+        div.textContent = (seatLabel ? seatLabel + ': ' : '') + text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    window.appendChatMessage = function (seat, username, message) {
+        const label = username || ('座位' + (seat != null ? seat + 1 : '?'));
+        appendChatLine(label, message || '', false);
+    };
+    if (chatSendBtn && chatInput) {
+        function sendChat() {
+            const msg = (chatInput.value || '').trim();
+            if (!msg) return;
+            if (socket && socket.connected) {
+                socket.emit('game:chat_message', { message: msg });
+            }
+            appendChatLine('我', msg, true);
+            chatInput.value = '';
+        }
+        chatSendBtn.addEventListener('click', sendChat);
+        chatInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+        });
+    }
+
     const presetMin = document.getElementById('preset-min');
     const presetHalf = document.getElementById('preset-half');
     const preset3q = document.getElementById('preset-3q');
@@ -392,6 +432,9 @@ function connectSocket() {
     socket.on('connect', function () {
         socket.emit('join_table', { table_id: tableId, token: token });
     });
+    socket.on('game:deal_phase', function (payload) {
+        if (payload && payload.phase) playDealPhaseAnimation(payload.phase, payload.cards || []);
+    });
     socket.on('game:state_update', function (state) {
         lastState = state;
         updateUI(state);
@@ -417,6 +460,11 @@ function connectSocket() {
     });
     socket.on('error', function (data) {
         if (data && data.message) alert(data.message);
+    });
+    socket.on('game:chat_message', function (data) {
+        if (typeof window.appendChatMessage === 'function') {
+            window.appendChatMessage(data.seat, data.username, data.message);
+        }
     });
 }
 
@@ -482,7 +530,11 @@ function dealNextStreet() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: token })
-    }).then(function (r) { return r.json(); }).then(function (s) { if (s && !s.error) updateUI(s); });
+    }).then(function (r) { return r.json(); }).then(function (s) {
+        if (s && s.error) return;
+        if (s && s.deal_phase) playDealPhaseAnimation(s.deal_phase, s.deal_cards || []);
+        if (s && !s.error) updateUI(s);
+    });
 }
 
 function normalizePlayer(player, seatIndex) {
@@ -529,9 +581,14 @@ function updateUI(state) {
     const sidePotEl = document.getElementById('side-pots-display');
     if (sidePotEl) {
         if (state.side_pots && state.side_pots.length > 0) {
-            sidePotEl.textContent = '边池: ' + state.side_pots.map(function (p) { return p.amount != null ? p.amount : p; }).join(', ');
+            var parts = state.side_pots.map(function (p, i) {
+                var amt = p.amount != null ? p.amount : p;
+                return '边池' + (i + 1) + ': ' + amt;
+            });
+            sidePotEl.innerHTML = parts.map(function (s) { return '<span class="side-pot-item">' + s + '</span>'; }).join(' ');
             sidePotEl.style.display = 'block';
         } else {
+            sidePotEl.innerHTML = '';
             sidePotEl.style.display = 'none';
         }
     }
@@ -643,6 +700,9 @@ function updateUI(state) {
         if (isDealer) badges.push('<span class="badge dealer">D</span>');
         if (isSB) badges.push('<span class="badge sb">SB</span>');
         if (isBB) badges.push('<span class="badge bb">BB</span>');
+        if (state.current_player_idx === realSeat && state.is_running) {
+            badges.push('<span class="badge active-turn" aria-live="polite">轮到你</span>');
+        }
 
         const emoteInfo = state.emotes && state.emotes[String(realSeat)];
         const emoteHtml = emoteInfo && emoteInfo.emote
@@ -803,6 +863,111 @@ function stageLabel(s) {
     return map[s] || s || '等待开始';
 }
 
+function parseCardForDisplay(cardData) {
+    var suit, rank;
+    if (cardData && typeof cardData === 'object' && ('suit' in cardData || 'rank' in cardData)) {
+        suit = cardData.suit != null ? cardData.suit : '?';
+        rank = cardData.rank != null ? cardData.rank : '?';
+    } else if (typeof cardData === 'string' && cardData.length >= 2) {
+        rank = cardData[0];
+        var sc = cardData[1];
+        suit = { H: '♥', D: '♦', C: '♣', S: '♠' }[sc] || '?';
+    } else {
+        suit = '?';
+        rank = '?';
+    }
+    if (suit.length === 1 && suit in { H: 1, D: 1, C: 1, S: 1 }) suit = { H: '♥', D: '♦', C: '♣', S: '♠' }[suit];
+    return { suit: suit, rank: rank };
+}
+
+function playDealPhaseAnimation(phase, cards) {
+    var container = document.getElementById('community-cards-display');
+    if (!container || !Array.isArray(cards)) return;
+    var isRed = function (s) { return s === '♥' || s === '♦'; };
+    var delayPerCard = 220;
+    if (phase === 'flop' && cards.length >= 3) {
+        var flopVariant = 'deal-flop-' + (1 + Math.floor(Math.random() * 6));
+        cards.slice(0, 3).forEach(function (c, i) {
+            var d = parseCardForDisplay(c);
+            setTimeout(function () {
+                var div = document.createElement('div');
+                div.className = 'card ' + (isRed(d.suit) ? 'red' : 'black') + ' deal-flop ' + flopVariant;
+                div.innerText = d.suit + d.rank;
+                container.appendChild(div);
+                setTimeout(function () { div.classList.add('visible'); }, 50);
+            }, i * delayPerCard);
+        });
+    } else if (phase === 'turn' && cards.length >= 1) {
+        var turnVariant = 'deal-turn-' + (1 + Math.floor(Math.random() * 6));
+        var d = parseCardForDisplay(cards[0]);
+        var div = document.createElement('div');
+        div.className = 'card ' + (isRed(d.suit) ? 'red' : 'black') + ' deal-turn ' + turnVariant;
+        div.innerText = d.suit + d.rank;
+        container.appendChild(div);
+        setTimeout(function () { div.classList.add('visible'); }, 50);
+    } else if (phase === 'river' && cards.length >= 1) {
+        var riverVariant = 'deal-river-' + (1 + Math.floor(Math.random() * 6));
+        var d = parseCardForDisplay(cards[0]);
+        var div = document.createElement('div');
+        div.className = 'card ' + (isRed(d.suit) ? 'red' : 'black') + ' deal-river ' + riverVariant;
+        div.innerText = d.suit + d.rank;
+        container.appendChild(div);
+        setTimeout(function () { div.classList.add('visible'); }, 50);
+    }
+}
+
+/**
+ * 发牌阶段动画：根据 game:deal_phase 或 deal_next 返回的 phase/cards 播放对应动画。
+ * 建议先播动画（每张 0.2–0.4s），随后 game:state_update 会更新牌面 DOM。
+ */
+function playDealPhaseAnimation(phase, cards) {
+    var container = document.getElementById('community-cards-display');
+    if (!container && phase !== 'hole_cards') return;
+
+    function cardToDisplay(card) {
+        if (!card) return { suit: '?', rank: '?' };
+        var suit = card.suit != null ? card.suit : '?';
+        var rank = card.rank != null ? card.rank : '?';
+        if (typeof suit === 'string' && suit.length === 1) {
+            suit = { H: '♥', D: '♦', C: '♣', S: '♠' }[suit.toUpperCase()] || suit;
+        }
+        return { suit: suit, rank: rank };
+    }
+    function isRed(s) { return s === '♥' || s === '♦'; }
+
+    if (phase === 'hole_cards') {
+        /* 底牌：无 cards 负载，由随后 state_update 渲染手牌并带 card-deal-hole 动画 */
+        return;
+    }
+
+    if (phase === 'flop' && cards && cards.length >= 3) {
+        var delayMs = 280;
+        for (var i = 0; i < 3; i++) {
+            var c = cardToDisplay(cards[i]);
+            var suitClass = isRed(c.suit) ? 'red' : 'black';
+            var cardDiv = document.createElement('div');
+            cardDiv.className = 'card ' + suitClass + ' deal-flop';
+            cardDiv.innerText = c.suit + c.rank;
+            container.appendChild(cardDiv);
+            (function (el) {
+                setTimeout(function () { el.classList.add('visible'); }, 80 + i * delayMs);
+            })(cardDiv);
+        }
+        return;
+    }
+
+    if ((phase === 'turn' || phase === 'river') && cards && cards.length >= 1) {
+        var dealClass = phase === 'turn' ? 'deal-turn' : 'deal-river';
+        var c = cardToDisplay(cards[0]);
+        var suitClass = isRed(c.suit) ? 'red' : 'black';
+        var cardDiv = document.createElement('div');
+        cardDiv.className = 'card ' + suitClass + ' ' + dealClass;
+        cardDiv.innerText = c.suit + c.rank;
+        container.appendChild(cardDiv);
+        setTimeout(function () { cardDiv.classList.add('visible'); }, 80);
+    }
+}
+
 function animateCards(container, cards, stage) {
     if (!container) return;
     var list = cards || [];
@@ -889,6 +1054,7 @@ function showWinnerAnimation(winnerInfo, winnerIdx, players, winnerAmount) {
     const overlay = document.getElementById('winner-overlay');
     const textEl = document.getElementById('winner-text');
     const amountEl = document.getElementById('winner-amount');
+    const handTypeEl = document.getElementById('winner-hand-type');
     if (!overlay || !textEl) return;
     const winnerName = players && players[winnerIdx] ? players[winnerIdx].name : '';
     textEl.textContent = winnerName ? winnerName + ' 获胜！' : (winnerInfo || '比牌结束');
@@ -899,6 +1065,16 @@ function showWinnerAnimation(winnerInfo, winnerIdx, players, winnerAmount) {
         } else {
             amountEl.textContent = '';
             amountEl.style.display = 'none';
+        }
+    }
+    if (handTypeEl && winnerInfo && typeof winnerInfo === 'string') {
+        var m = winnerInfo.match(/牌型[：:]\s*([^，。]+)/);
+        if (m) {
+            handTypeEl.textContent = m[1].trim();
+            handTypeEl.style.display = 'block';
+        } else {
+            handTypeEl.textContent = '';
+            handTypeEl.style.display = 'none';
         }
     }
     overlay.classList.remove('hidden');

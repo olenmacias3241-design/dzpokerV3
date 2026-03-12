@@ -60,30 +60,35 @@ EXIT;
 
 ### 5. 配置环境变量
 
+复制示例并编辑（项目根目录）：
+
 ```bash
-sudo nano /opt/dzpokerV3/.env
+cp .env.example .env
+nano .env
 ```
 
-添加以下内容：
+`.env.example` 位于项目根目录，变量与 `config.py` 一致。必填示例：
 
 ```env
-# 数据库配置
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=dzpoker
-DB_PASSWORD=your_password_here
-DB_NAME=dzpoker
+# 应用
+SECRET_KEY=your_secret_key_here_use_openssl_rand_hex_32
+FLASK_DEBUG=0
 
-# 服务器配置
-FLASK_ENV=production
-SECRET_KEY=your_secret_key_here
-PORT=5002
+# MySQL
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=dzpoker
+MYSQL_PASSWORD=your_password_here
+MYSQL_DATABASE=dzpoker
+MYSQL_CHARSET=utf8mb4
 
-# 游戏配置
+# 游戏（可选，有默认值）
 PLAYER_ACTION_TIMEOUT=15
 PLAYER_ACTION_TIMEOUT_MIN=10
 PLAYER_ACTION_TIMEOUT_MAX=30
 ```
+
+说明：本仓库使用 `MYSQL_*` 变量名（见 `config.py`），若从旧文档看到 `DB_*` 请以 `.env.example` 为准。
 
 ### 6. 初始化数据库
 
@@ -196,6 +201,39 @@ server {
 sudo systemctl start nginx
 sudo systemctl enable nginx
 ```
+
+---
+
+## 前后端分离部署
+
+当**前端静态资源**（大厅、牌桌页等）与**后端 API/WebSocket** 部署在不同域名或机器时，按以下方式配置。
+
+- **架构说明**：见 [ARCHITECTURE.md](./ARCHITECTURE.md)（服务端单一数据源、客户端只监控当前桌、数据流）。
+- **服务端**：按本文「快速部署」部署后端即可；CORS 当前允许任意来源（`*`），生产可按需收紧。
+- **环境变量**：服务端使用项目根目录 [.env.example](./.env.example) 复制为 `.env` 配置（见上文「配置环境变量」）。
+
+### 客户端配置
+
+前端需在**加载任何业务脚本之前**指定 API 与 WebSocket 地址，否则请求会走同源。
+
+在入口 HTML（如 `index.html`、`lobby.html` 或模板中的 `<head>`）中，在引用 `config.js` 之前加入：
+
+```html
+<script>
+  window.DZPOKER_API_BASE = "https://api.example.com";   // 后端 API 根地址，无末尾斜杠
+  window.DZPOKER_WS_URL   = "https://api.example.com";   // Socket.IO 连此地址
+</script>
+<script src="/static/config.js"></script>
+```
+
+- 同源部署时可不设置上述两个变量（或设为 `""`），则使用当前页面的 origin。
+- 分离部署时把 `https://api.example.com` 换成实际后端地址（如 `http://IP:5001`）。
+
+### 流程简述
+
+1. **后端**：在一台服务器上按本文完成「快速部署」，保证 `/api/*` 与 `/socket.io` 可访问。
+2. **前端**：将 `templates/` 渲染后的静态资源放到 CDN 或另一域名；在该站点页面中设置 `DZPOKER_API_BASE` 与 `DZPOKER_WS_URL` 指向后端地址。
+3. **验证**：浏览器打开前端入口 → 登录 → 大厅 → 创建/加入桌 → 牌桌页，确认请求发往后端且 WebSocket 正常推送。
 
 ---
 

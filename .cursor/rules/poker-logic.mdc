@@ -1,0 +1,11 @@
+---
+description: 游戏逻辑与扑克规则（core 逻辑、比牌、下注）
+globs: core/game_logic.py,core/logic.py
+alwaysApply: false
+---
+
+# 扑克逻辑开发规则
+
+- **流程与规则**：以 `docs/requirements/03_game_table_core_logic.md` 为准（下注回合、发牌顺序、比牌、底池分配、All-in 等）。
+- **术语与牌型**：参考 `docs/knowledge/POKER_KNOWLEDGE_BASE.md`（阶段、行动、位置、牌型大小、边池）。
+- **代码位置**：`core/game_logic.py` 封装对局状态与对外接口；`core/logic.py` 含回合与动作处理。修改时保持与 spec 一致，并考虑保险、边池等扩展。

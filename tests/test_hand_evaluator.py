@@ -11,17 +11,12 @@ from core.hand_evaluator import evaluate_hand, find_winners
 class TestHandEvaluator(unittest.TestCase):
 
     def test_evaluate_hand_placeholder(self):
-        """
-        Test the placeholder hand evaluation logic.
-        NOTE: This test will need to be updated when a real evaluator is implemented.
-        """
-        # Test case 1: A simple high card hand
+        """Test hand evaluation returns (rank_tuple, best_5_cards, type_index); rank 可比较。"""
         hole = [Card('A', 'H'), Card('K', 'D')]
         community = [Card('2', 'S'), Card('4', 'C'), Card('6', 'H'), Card('8', 'D'), Card('T', 'S')]
-        score, hand, _ = evaluate_hand(hole, community)
-        self.assertIsInstance(score, int)
+        rank, hand, _ = evaluate_hand(hole, community)
+        self.assertIsInstance(rank, tuple)
         self.assertEqual(len(hand), 5)
-        # Placeholder logic just checks for high card sum, so A,K,T,8,6 should be the hand
         self.assertEqual(sorted([c.rank for c in hand]), sorted(['A', 'K', 'T', '8', '6']))
 
     def test_evaluate_one_pair(self):
@@ -36,34 +31,29 @@ class TestHandEvaluator(unittest.TestCase):
         self.assertGreater(score, score_high)
 
     def test_find_winners_single_winner(self):
-        """Test finding a single winner from a showdown."""
-        # p2 makes three of a kind (Kings), which beats p1's pair of Aces.
+        """p2 三条 K 应击败 p1 一对 A、p3 高牌（牌面避免 p3 成顺子）。"""
         game_state = {
-            'community_cards': [Card('2', 'S'), Card('5', 'C'), Card('J', 'H'), Card('Q', 'D'), Card('K', 'S')],
+            'community_cards': [Card('2', 'S'), Card('5', 'C'), Card('8', 'H'), Card('Q', 'D'), Card('K', 'S')],
             'players': {
-                'p1': {'is_in_hand': True, 'hole_cards': [Card('A', 'H'), Card('A', 'S')]}, # One pair (Aces)
-                'p2': {'is_in_hand': True, 'hole_cards': [Card('K', 'H'), Card('K', 'C')]}, # Three of a kind (Kings)
-                'p3': {'is_in_hand': True, 'hole_cards': [Card('T', 'C'), Card('9', 'C')]}  # High card
+                'p1': {'is_in_hand': True, 'hole_cards': [Card('A', 'H'), Card('A', 'S')]},
+                'p2': {'is_in_hand': True, 'hole_cards': [Card('K', 'H'), Card('K', 'C')]},
+                'p3': {'is_in_hand': True, 'hole_cards': [Card('T', 'C'), Card('9', 'C')]}
             }
         }
         winners = find_winners(game_state)
         self.assertEqual(winners, ['p2'])
 
     def test_find_winners_split_pot(self):
-        """Test finding multiple winners (split pot) in a showdown."""
-        # The best possible hand is on the board (e.g. a high pair).
-        # Both players must play the board, resulting in a split pot as their hole cards don't improve their hand.
+        """三人均用公牌成牌（两对 A+K，牌面无顺子），牌型相同则平分。"""
         game_state = {
-            'community_cards': [Card('A', 'S'), Card('A', 'C'), Card('K', 'H'), Card('Q', 'D'), Card('J', 'S')],
+            'community_cards': [Card('A', 'S'), Card('A', 'C'), Card('K', 'H'), Card('K', 'D'), Card('Q', 'S')],
             'players': {
-                'p1': {'is_in_hand': True, 'hole_cards': [Card('2', 'H'), Card('3', 'S')]}, # Plays the board
-                'p2': {'is_in_hand': True, 'hole_cards': [Card('2', 'C'), Card('4', 'D')]}, # Plays the board
-                'p3': {'is_in_hand': True, 'hole_cards': [Card('T', 'H'), Card('9', 'C')]}  # Plays the board
+                'p1': {'is_in_hand': True, 'hole_cards': [Card('2', 'H'), Card('3', 'S')]},
+                'p2': {'is_in_hand': True, 'hole_cards': [Card('2', 'C'), Card('4', 'D')]},
+                'p3': {'is_in_hand': True, 'hole_cards': [Card('T', 'H'), Card('9', 'C')]}
             }
         }
         winners = find_winners(game_state)
-        # p1 and p2 should tie because their best 5-card hand is exactly the same (the board)
-        # and their high card scores will be identical.
         self.assertCountEqual(winners, ['p1', 'p2', 'p3'])
 
 

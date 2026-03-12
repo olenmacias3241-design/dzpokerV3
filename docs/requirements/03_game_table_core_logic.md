@@ -1,5 +1,9 @@
 # 03 - 游戏核心逻辑
 
+**完整玩法与打牌规则**见 **[docs/knowledge/TEXAS_HOLDEM_PLAY_AND_RULES.md](../knowledge/TEXAS_HOLDEM_PLAY_AND_RULES.md)**（标准德州扑克玩法与打牌需求文档）。下文为流程摘要与状态机。
+
+---
+
 ## 4.0 一局流程（标准德州扑克）
 
 每一局的顺序固定为：

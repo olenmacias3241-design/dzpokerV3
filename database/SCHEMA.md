@@ -5,42 +5,68 @@ This document outlines the database schema for persisting game state. The goal i
 We will use SQLAlchemy as the ORM.
 
 ## Table of Contents
-1.  `users` - User accounts
-2.  `game_tables` - Poker tables
-3.  `table_seats` - Player state at a table
-4.  `hands` - Individual hands/rounds played at a table
-5.  `hand_actions` - A log of every action within a hand
+1.  `users` - User accounts（支持账号密码与钱包双模式）
+2.  `user_wallets` - 加密钱包绑定（多链）
+3.  `clubs` - 俱乐部
+4.  `club_members` - 俱乐部成员
+5.  `club_join_requests` - 俱乐部加入申请
+6.  `game_tables` - Poker tables（含 club_id 俱乐部专属牌桌）
+7.  `table_seats` - Player state at a table
+8.  `hands` / `game_hands` - Individual hands/rounds
+9.  `hand_actions` / `hand_participants` - Actions and participants
 
 ---
 
 ### 1. `users` Table
-Stores registered user information.
+Stores registered user information. **username** and **hashed_password** are **optional (nullable)** to support wallet-only users（见 docs/requirements/10_encrypted_wallet_user.md）；钱包用户可后补账号密码。
 
 -   `id` (Integer, Primary Key, Auto-increment)
--   `username` (String, Unique, Not Null)
--   `password_hash` (String, Not Null)
--   `email` (String, Unique)
--   `coins_balance` (Integer, Default: 10000)
--   `created_at` (DateTime, Default: NOW())
+-   `username` (String, Unique, **Nullable**)
+-   `hashed_password` (String, **Nullable**)
+-   `email` (String, Unique, Nullable)
+-   `nickname`, `avatar_url`, `coins_balance`, `level`, `experience_points`, stats, timestamps
 
 ---
 
-### 2. `game_tables` Table
-Stores the static configuration and current status of each poker table.
+### 2. `user_wallets` Table（加密钱包绑定）
+用户与链上地址绑定；支持 ETH、BSC、SOL、Tron。同一用户可绑定多条链、多个地址。详见 docs/requirements/10。
 
--   `id` (Integer, Primary Key, Auto-increment)
--   `table_name` (String)
--   `status` (Enum: 'waiting', 'playing', 'ended', Default: 'waiting')
--   `sb_amount` (Integer, Not Null)
--   `bb_amount` (Integer, Not Null)
--   `max_players` (Integer, Default: 9)
--   `min_buy_in` (Integer)
--   `max_buy_in` (Integer)
--   `created_at` (DateTime, Default: NOW())
+-   `id`, `user_id` (FK -> users.id)
+-   `chain` (VARCHAR: ETH|BSC|SOL|Tron)
+-   `address` (VARCHAR, 归一化地址)
+-   `is_primary` (Boolean), `bound_at` (Timestamp)
+-   UNIQUE (chain, address)
 
 ---
 
-### 3. `table_seats` Table
+### 3. `clubs` Table
+俱乐部主表。详见 docs/requirements/11_club_design.md。
+
+-   `id`, `name`, `description`, `avatar_url`, `creator_user_id`
+-   `visibility`, `join_policy`, `invite_code`, `max_members`
+-   `created_at`, `updated_at`
+
+---
+
+### 4. `club_members` Table
+-   `club_id`, `user_id`, `role` (owner|admin|member), `joined_at`
+-   PRIMARY KEY (club_id, user_id)
+
+---
+
+### 5. `club_join_requests` Table
+-   `id`, `club_id`, `user_id`, `status` (pending|approved|rejected)
+-   `created_at`, `resolved_at`, `resolved_by`
+
+---
+
+### 6. `game_tables` Table
+-   `id`, **`club_id` (Nullable, FK -> clubs.id)**：非空表示俱乐部专属牌桌，仅该俱乐部成员可见/可加入
+-   `table_name`, `small_blind`, `big_blind`, `min_buy_in`, `max_buy_in`, `max_players`, `status`, timestamps
+
+---
+
+### 7. `table_seats` Table
 Represents a player currently sitting at a table. This stores the dynamic state of a player in the context of a table.
 
 -   `id` (Integer, Primary Key, Auto-increment)
@@ -52,7 +78,7 @@ Represents a player currently sitting at a table. This stores the dynamic state 
 
 ---
 
-### 4. `hands` Table
+### 8. `hands` / `game_hands` Table
 A record for every single hand played. This is crucial for history and for reconstructing an interrupted game.
 
 -   `id` (Integer, Primary Key, Auto-increment)
@@ -67,7 +93,7 @@ A record for every single hand played. This is crucial for history and for recon
 
 ---
 
-### 5. `hand_actions` Table
+### 9. `hand_actions` / `hand_participants` Table
 Logs every single action a player takes. This provides a complete audit trail and is the ultimate source for reconstructing a hand's state.
 
 -   `id` (Integer, Primary Key, Auto-increment)

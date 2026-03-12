@@ -261,7 +261,7 @@ if self.insurance_enabled and len(all_in_indices) >= 2 and self.stage in ('flop'
 
 - **审查报告：** `LOGIC_REVIEW.md`
 - **修复补丁：** `LOGIC_FIX_PATCH.md`
-- **知识库：** `POKER_KNOWLEDGE_BASE.md`
+- **知识库：** `docs/knowledge/POKER_KNOWLEDGE_BASE.md`
 - **行业专业技能：** `memory/poker-expertise.md`
 
 ---

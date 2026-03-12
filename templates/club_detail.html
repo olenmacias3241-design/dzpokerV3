@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}俱乐部详情 · DZPoker{% endblock %}
+{% block content %}
+<div class="club-detail-page">
+    <h1 class="page-title">俱乐部详情</h1>
+    <div id="club-loading" class="panel">加载中…</div>
+    <div id="club-content" class="panel" style="display: none;">
+        <div class="club-header">
+            <h2 id="club-name" class="club-name"></h2>
+            <p id="club-description" class="club-description"></p>
+            <p class="club-meta">创建者 ID: <span id="club-owner-id"></span></p>
+        </div>
+        <div class="club-actions">
+            <button type="button" id="join-club-btn" class="btn btn-primary">加入俱乐部</button>
+            <a href="/clubs" class="btn btn-secondary">返回列表</a>
+        </div>
+        <div class="club-members-section">
+            <h3>成员</h3>
+            <ul id="club-members-list" class="club-members-list"></ul>
+        </div>
+        <p id="club-msg" class="form-msg"></p>
+    </div>
+    <div id="club-error" class="panel panel-error" style="display: none;">
+        <p id="club-error-text"></p>
+        <a href="/clubs">返回俱乐部列表</a>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+    var clubId = {{ club_id }};
+    var token = (window.authGetToken && window.authGetToken()) || localStorage.getItem('token') || '';
+    var apiBase = (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl('') : '';
+    var loadingEl = document.getElementById('club-loading');
+    var contentEl = document.getElementById('club-content');
+    var errorEl = document.getElementById('club-error');
+    var errorText = document.getElementById('club-error-text');
+
+    function showContent(data) {
+        loadingEl.style.display = 'none';
+        contentEl.style.display = 'block';
+        document.getElementById('club-name').textContent = data.name || '未命名';
+        document.getElementById('club-description').textContent = data.description || '暂无简介';
+        document.getElementById('club-owner-id').textContent = data.owner_id != null ? data.owner_id : '—';
+        var list = document.getElementById('club-members-list');
+        list.innerHTML = '';
+        if (data.members && data.members.length) {
+            data.members.forEach(function(m) {
+                var li = document.createElement('li');
+                li.textContent = '用户 ' + m.user_id + ' (' + (m.role || 'member') + ')';
+                list.appendChild(li);
+            });
+        } else {
+            list.innerHTML = '<li class="muted">暂无成员</li>';
+        }
+    }
+
+    function showError(msg) {
+        loadingEl.style.display = 'none';
+        contentEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorText.textContent = msg || '加载失败';
+    }
+
+    fetch(apiBase + '/api/clubs/' + clubId, {
+        headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                showError(data.error);
+                return;
+            }
+            showContent(data);
+        })
+        .catch(function() { showError('网络错误'); });
+
+    var joinBtn = document.getElementById('join-club-btn');
+    var msgEl = document.getElementById('club-msg');
+    if (joinBtn) {
+        joinBtn.addEventListener('click', function() {
+            if (!token) {
+                msgEl.textContent = '请先登录';
+                msgEl.className = 'form-msg error';
+                return;
+            }
+            msgEl.textContent = '';
+            joinBtn.disabled = true;
+            fetch(apiBase + '/api/clubs/' + clubId + '/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.message) {
+                        msgEl.textContent = data.message;
+                        msgEl.className = 'form-msg success';
+                    }
+                    if (data.error) {
+                        msgEl.textContent = data.error;
+                        msgEl.className = 'form-msg error';
+                    }
+                    joinBtn.disabled = false;
+                })
+                .catch(function() {
+                    msgEl.textContent = '请求失败';
+                    msgEl.className = 'form-msg error';
+                    joinBtn.disabled = false;
+                });
+        });
+    }
+})();
+</script>
+{% endblock %}

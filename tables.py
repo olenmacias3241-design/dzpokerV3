@@ -204,10 +204,25 @@ class GameWrapper:
             "last_action": next((p.get("last_action") for p in s["players"].values() if p.get("last_action")), "") or "",
             "players": players_out,
             "max_players": len(seat_to_pid),
-            "pending_insurance": self.pending_insurance,
+            "pending_insurance": s.get("pending_insurance") or self.pending_insurance,
             "is_running": s.get("current_player_id") is not None and stage_name not in ("SHOWDOWN", "ENDED"),
             "side_pots": [{"amount": p.get("amount", p)} for p in s.get("pots", [])] if s.get("pots") else [],
         }
+        if s.get("pending_insurance"):
+            pi = s["pending_insurance"]
+            leading_pid = pi.get("leading_pid")
+            leading_name = "领先玩家"
+            for _tok, u in _tokens.items():
+                if str(u.get("user_id")) == str(leading_pid):
+                    leading_name = (u.get("username") or "领先玩家")[:20]
+                    break
+            out["insurance_offer"] = {
+                "leading_idx": seat_to_pid.index(leading_pid) if leading_pid in seat_to_pid else 0,
+                "equity": pi.get("equity", 0),
+                "leading_name": leading_name,
+            }
+        else:
+            out["insurance_offer"] = None
         # 仅当前请求玩家可见：翻牌/转牌/河牌后显示己方牌型
         if private_pid:
             ps = s["players"].get(private_pid, {})
@@ -680,20 +695,45 @@ def add_bot(table_id, seat_idx, bot_name=None, stack=1000):
 
 
 def deal_next_street(table_id):
-    """进入下一条街（翻牌/转牌/河牌）。"""
+    """
+    进入下一条街（翻牌/转牌/河牌）。
+    返回 (ok, err, phase, new_cards)：
+    - phase: "flop"|"turn"|"river"|None（若未发牌则为 None）
+    - new_cards: 本街新发的牌，格式 [{suit, rank}, ...]，供前端发牌动画使用。
+    """
     t = TABLES.get(table_id)
     if not t or not t.get("game"):
-        return False, "对局不存在"
-    game_logic.advance_to_next_stage(t["game"].state)
-    return True, None
+        return False, "对局不存在", None, []
+    wrapper = t["game"]
+    community_before = list(wrapper.state.get("community_cards", []))
+    game_logic.advance_to_next_stage(wrapper.state)
+    community_after = wrapper.state.get("community_cards", [])
+    n_before, n_after = len(community_before), len(community_after)
+    phase = None
+    new_cards = []
+    if n_after == 3 and n_before == 0:
+        phase = "flop"
+        new_cards = [wrapper._card_to_display(c) for c in community_after[:3]]
+    elif n_after == 4 and n_before == 3:
+        phase = "turn"
+        new_cards = [wrapper._card_to_display(community_after[-1])]
+    elif n_after == 5 and n_before == 4:
+        phase = "river"
+        new_cards = [wrapper._card_to_display(community_after[-1])]
+    return True, None, phase, new_cards
 
 
 def resolve_insurance(table_id, token, amount):
-    """处理保险决定（当前为存根，直接放弃）。"""
+    """处理保险决定：若有 pending_insurance 则调用 game_logic.resolve_insurance 并写回 state；否则仅清空（兼容）。"""
     t = TABLES.get(table_id)
     if not t or not t.get("game"):
         return False, "对局不存在"
-    t["game"].pending_insurance = None
+    wrapper = t["game"]
+    if hasattr(wrapper, "state") and wrapper.state.get("pending_insurance"):
+        ok = game_logic.resolve_insurance(wrapper.state, amount)
+        if ok:
+            return True, None
+    wrapper.pending_insurance = None
     return True, None
 
 

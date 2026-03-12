@@ -6,3 +6,7 @@ python-dotenv>=1.0
 PyJWT>=2.0
 SQLAlchemy>=1.4
 mysql-connector-python>=8.0
+
+# 后端接口测试
+pytest>=7.0
+requests>=2.28

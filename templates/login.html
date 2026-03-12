@@ -15,12 +15,25 @@
         <button type="submit" class="btn btn-primary">登录</button>
         <div class="auth-msg" id="auth-msg"></div>
     </form>
+    <div class="auth-divider">或</div>
+    <div class="wallet-login">
+        <h3>钱包登录</h3>
+        <p class="wallet-msg" id="wallet-msg">支持 ETH、BSC、SOL、Tron。连接钱包后点击对应链进行签名登录。</p>
+        <div class="wallet-chain">
+            <button type="button" data-chain="ETH">ETH</button>
+            <button type="button" data-chain="BSC">BSC</button>
+            <button type="button" data-chain="SOL">SOL</button>
+            <button type="button" data-chain="Tron">Tron</button>
+        </div>
+        <p class="wallet-msg" id="wallet-status"></p>
+    </div>
     <div class="auth-footer">
         还没有账号？<a href="/register">立即注册</a>
     </div>
 </div>
 {% endblock %}
 {% block scripts %}
+<script src="/static/wallet-login.js"></script>
 <script>
 (function() {
     var form = document.getElementById('login-form');

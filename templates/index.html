@@ -1,9 +1,5 @@
 {% extends "base.html" %}
-{% block title %}DZPoker - 牌桌{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-{% endblock %}
+{% block title %}DZPoker · 牌桌{% endblock %}
 
 {% block content %}
 <div id="no-table-msg" class="panel" style="display: none;">
@@ -30,7 +26,7 @@
                 <div id="community-cards-display"></div>
             </div>
             <div class="pot">
-                <h3>底池: <span id="pot-display">0</span></h3>
+                <span class="pot-label">主池</span> <span id="pot-display">0</span>
                 <p id="side-pots-display" class="side-pots" style="display: none;"></p>
             </div>
             <div class="last-action">
@@ -66,10 +62,10 @@
                 <input type="number" id="bet-amount" placeholder="金额" min="0">
                 <input type="range" id="bet-slider" min="0" max="10000" value="0">
                 <div class="pot-presets">
-                    <button type="button" id="preset-min">最小</button>
-                    <button type="button" id="preset-half">一半</button>
-                    <button type="button" id="preset-3q">3/4</button>
-                    <button type="button" id="preset-pot">底池</button>
+                    <button type="button" id="preset-min" title="最小加注">Min</button>
+                    <button type="button" id="preset-half" title="一半底池">1/2 Pot</button>
+                    <button type="button" id="preset-3q" title="四分之三底池">3/4 Pot</button>
+                    <button type="button" id="preset-pot" title="底池大小">Pot</button>
                 </div>
             </div>
             <div id="my-stats" class="my-stats" style="display: none;">
@@ -78,12 +74,22 @@
                 跟注额 <strong id="call-amount-display">0</strong>
                 <span id="street-hint" class="street-hint" style="display: none;"></span>
             </div>
-            <div class="emote-bar">
+            <div class="emote-bar" aria-label="表情">
                 <span class="emote-label">表情</span>
                 <button type="button" class="emote-btn" data-emote="👍">👍</button>
                 <button type="button" class="emote-btn" data-emote="😂">😂</button>
                 <button type="button" class="emote-btn" data-emote="😎">😎</button>
                 <button type="button" class="emote-btn" data-emote="🙏">🙏</button>
+            </div>
+            <div class="chat-bar">
+                <button type="button" id="chat-toggle-btn" class="chat-toggle" aria-expanded="false" aria-controls="chat-panel">聊天</button>
+                <div id="chat-panel" class="chat-panel" role="region" aria-label="牌桌聊天" style="display: none;">
+                    <div id="chat-messages" class="chat-messages"></div>
+                    <div class="chat-input-wrap">
+                        <input type="text" id="chat-input" placeholder="输入消息…" maxlength="200" aria-label="聊天输入">
+                        <button type="button" id="chat-send-btn" class="btn btn-primary">发送</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -91,6 +97,7 @@
     <div id="winner-overlay" class="winner-overlay hidden" aria-hidden="true">
         <div class="winner-content">
             <p id="winner-text" class="winner-text"></p>
+            <p id="winner-hand-type" class="winner-hand-type" style="display: none;"></p>
             <span id="winner-amount" class="winner-amount" style="display: none;"></span>
         </div>
         <div id="confetti-container" class="confetti-container"></div>
@@ -99,5 +106,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+<script src="/static/script.js"></script>
 {% endblock %}

@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}DZPoker{% endblock %}</title>
-    <link rel="stylesheet" href="/static/style_common.css">
-    {% if request.endpoint != 'index' %}<link rel="stylesheet" href="/static/style_new.css">{% endif %}
+    <link rel="stylesheet" href="/static/app.css">
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -15,6 +14,8 @@
             <a href="/" class="{% if request.endpoint == 'index' %}active{% endif %}">牌桌</a>
             <a href="{{ url_for('lobby') }}" class="{% if request.endpoint == 'lobby' %}active{% endif %}">大厅</a>
             <a href="{{ url_for('mall') }}" class="{% if request.endpoint == 'mall' %}active{% endif %}">商城</a>
+            <a href="/clubs" class="{% if request.endpoint == 'clubs_page' or request.endpoint == 'club_detail_page' %}active{% endif %}">俱乐部</a>
+            <a href="/tournaments" class="{% if request.endpoint == 'tournaments_page' or request.endpoint == 'tournament_detail_page' or request.endpoint == 'tournament_lobby_page' %}active{% endif %}">锦标赛</a>
         </div>
         <div class="nav-right">
             <span class="nav-guest" id="nav-guest">
@@ -22,6 +23,7 @@
                 <a href="/register">注册</a>
             </span>
             <span class="nav-user" id="nav-user" style="display:none;">
+                <a href="/profile" class="nav-profile-link">个人中心</a>
                 <span class="nav-username" id="nav-username"></span>
                 <span class="user-coins" id="nav-coins"></span>
                 <a href="#" id="nav-logout">退出</a>

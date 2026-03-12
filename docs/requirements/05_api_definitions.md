@@ -35,6 +35,13 @@
     - `cards`: [`rank suit`, `rank suit`] (e.g., ["As", "Kd"])
   - **Note**: 此事件只发送给该玩家自己。
 
+- `game:deal_phase`
+  - **触发**: 每街发牌时（底牌、翻牌、转牌、河牌），供前端做发牌动画。
+  - **Payload**:
+    - `phase`: "hole_cards" | "flop" | "turn" | "river"
+    - `cards`: 本街新发的牌数组，每项 `{ suit, rank }`（仅 flop/turn/river 有；hole_cards 时前端用 state 中各玩家 hand 做动画）
+  - **Note**: 前端收到后可按 phase 播放对应动画（2 张手牌、3 张翻牌、1 张转牌、1 张河牌）。实现建议：先监听 `game:deal_phase` 播放发牌动画（如每张牌 0.2–0.4s 依次出现），再根据随后收到的 `game:state_update` 或当前 state 更新牌面 DOM。
+
 ## Client -> Server (玩家操作)
 
 - `game:action`

@@ -1,0 +1,12 @@
+---
+description: 后端约定（API、tables、core、database）
+globs: app.py,tables.py,core/**/*.py,database/**/*.py,services/**/*.py
+alwaysApply: false
+---
+
+# 后端开发规则
+
+- **API 与事件**：以 `docs/requirements/05_api_definitions.md` 为准；WebSocket 按桌 room，仅向已加入该桌的客户端推送 `game:state_update` / `table:state`。
+- **牌桌状态**：`tables.TABLES` 为单一数据源；创建/加入/开局/下注/发牌等均由服务端处理，见 `ARCHITECTURE.md`。
+- **游戏逻辑**：核心在 `core/game_logic.py`、`core/logic.py`；改下注、比牌、底池时参考 `docs/requirements/03_game_table_core_logic.md` 和 `docs/knowledge/POKER_KNOWLEDGE_BASE.md`。
+- **数据库**：表结构见 `docs/requirements/06_database_schema.md` 与 `database/`；需 session 时用 `SessionLocal()`，用毕 `db.close()`。钱包/俱乐部/锦标赛/约局表见 06 中对应章节；规格见 `docs/requirements/10_encrypted_wallet_user.md`、`docs/requirements/11_club_design.md`、`docs/requirements/12_tournaments_sng_mtt.md`、`docs/requirements/13_scheduled_game_mode.md`。

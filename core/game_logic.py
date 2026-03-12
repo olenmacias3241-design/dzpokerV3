@@ -34,6 +34,7 @@
 #    - dealer_pos=0 → SB=1, BB=2 → 先行动=座位0(UTG)，然后座位1(SB)，最后座位2(BB)。
 
 from enum import Enum, auto
+import random
 from .cards import Deck, Card
 from . import hand_evaluator
 
@@ -119,7 +120,18 @@ def handle_player_action(game_state, player_id, action, amount=0):
         player_state['is_active'] = False
         player_state['last_action'] = 'FOLD'
         player_state['has_acted'] = True
-    
+        # 知识库 10.1：除一人外全部弃牌 → 立即结束本局，该玩家赢得当前底池
+        active_remaining = [pid for pid, p in game_state['players'].items() if p.get('is_in_hand') and p.get('is_active')]
+        if len(active_remaining) == 1:
+            winner_id = active_remaining[0]
+            pot_won = game_state.get('pot', 0)
+            game_state['players'][winner_id]['stack'] = game_state['players'][winner_id].get('stack', 0) + pot_won
+            game_state['pot'] = 0
+            game_state['stage'] = GameStage.ENDED
+            game_state['current_player_id'] = None
+            game_state['winners'] = [winner_id]
+            game_state['last_hand_winnings'] = {winner_id: pot_won}
+            return game_state, None
     elif action == PlayerAction.CHECK:
         player_state['last_action'] = 'CHECK'
         player_state['has_acted'] = True
@@ -136,6 +148,8 @@ def handle_player_action(game_state, player_id, action, amount=0):
             player_state['is_all_in'] = True
 
     elif action == PlayerAction.BET:
+        if amount_to_call != 0:
+            return game_state, "当前有人已下注，请使用跟注或加注"
         if amount <= 0 or amount > player_state['stack']:
             return game_state, "下注金额无效"
         player_state['stack'] -= amount
@@ -150,20 +164,21 @@ def handle_player_action(game_state, player_id, action, amount=0):
             player_state['is_all_in'] = True
 
     elif action == PlayerAction.RAISE:
-        # Basic raise validation
+        # 加注：本街总投入必须大于当前跟注额；最小加注 = 一个大盲注（或上次加注增量）
         min_raise = game_state.get('last_raise_amount', game_state.get('bb', 0))
         if amount < min_raise:
             return game_state, f"加注金额不能小于 {min_raise}"
-        
-        total_bet = amount_to_call + amount
-        if total_bet > player_state['stack']:
-             return game_state, "加注金额超过你的筹码"
-
-        player_state['stack'] -= total_bet
-        player_state['bet_this_round'] = player_state.get('bet_this_round', 0) + total_bet
-        player_state['total_bet_this_hand'] = player_state.get('total_bet_this_hand', 0) + total_bet
-        game_state['pot'] += total_bet
-        game_state['amount_to_call'] = player_state['bet_this_round']
+        # 本街总投入 = 当前跟注额 + 加注额（即 total new bet for this street）
+        total_to_put = amount_to_call + amount
+        if total_to_put > player_state['stack']:
+            return game_state, "加注金额超过你的筹码"
+        prev_bet_round = player_state.get('bet_this_round', 0)
+        add_to_pot = total_to_put - prev_bet_round
+        player_state['stack'] -= add_to_pot
+        player_state['bet_this_round'] = total_to_put  # 本街总投入
+        player_state['total_bet_this_hand'] = player_state.get('total_bet_this_hand', 0) + add_to_pot
+        game_state['pot'] += add_to_pot
+        game_state['amount_to_call'] = total_to_put
         game_state['last_raise_amount'] = amount
         player_state['last_action'] = 'RAISE'
         player_state['has_acted'] = True
@@ -241,6 +256,137 @@ def find_next_player(game_state, last_actor_id):
     return None, True
 
 
+def _compute_equity(game_state):
+    """全员 All-in 时用蒙特卡洛估算胜率。返回 (leading_pid, {pid: equity})，无法计算时 (None, {})。"""
+    players = game_state.get("players", {})
+    community = game_state.get("community_cards", [])
+    deck = game_state.get("deck")
+    if not deck or not hasattr(deck, "cards"):
+        return None, {}
+    all_in_pids = [pid for pid, p in players.items() if p.get("is_in_hand") and p.get("is_all_in")]
+    if len(all_in_pids) < 2:
+        return None, {}
+    need = 5 - len(community)
+    remaining = list(deck.cards)
+    if need <= 0 or need > len(remaining):
+        return None, {}
+    N = 400
+    wins = {pid: 0.0 for pid in all_in_pids}
+    for _ in range(N):
+        runout = random.sample(remaining, need)
+        board = list(community) + list(runout)
+        scores = {}
+        for pid in all_in_pids:
+            hole = players[pid].get("hole_cards", [])
+            if len(hole) != 2 or len(board) < 5:
+                continue
+            rank, _, _ = hand_evaluator.evaluate_hand(hole, board[:5])
+            scores[pid] = rank
+        if len(scores) < 2:
+            continue
+        best = max(scores.values())
+        winners = [p for p in all_in_pids if scores.get(p) == best]
+        for pid in winners:
+            wins[pid] += 1.0 / len(winners)
+    equities = {p: wins[p] / N for p in all_in_pids}
+    leading_pid = max(all_in_pids, key=lambda p: equities[p])
+    return leading_pid, equities
+
+
+def _run_showdown(game_state):
+    """比牌、边池分配，若有保险购买则结算保险（购买者未赢任何池则赔付）。会修改 game_state 的 pot/stage/winners/last_hand_winnings 等。"""
+    from . import pot_manager
+
+    insurance_buyer_chips_before = None
+    if game_state.get("insurance_purchase"):
+        pid = game_state["insurance_purchase"].get("player_idx")
+        if pid is not None and pid in game_state.get("players", {}):
+            insurance_buyer_chips_before = game_state["players"][pid].get("stack", 0)
+
+    players_for_pot = {}
+    for pid, pstate in game_state["players"].items():
+        players_for_pot[pid] = {
+            "total_bet_this_hand": pstate.get("total_bet_this_hand", 0),
+            "is_folded": not pstate.get("is_in_hand", False) or not pstate.get("is_active", False),
+        }
+    pots = pot_manager.calculate_side_pots(players_for_pot)
+    hand_ranks = {}
+    for pid, pstate in game_state["players"].items():
+        if pstate.get("is_in_hand") and pstate.get("is_active"):
+            hole_cards = pstate.get("hole_cards", [])
+            community = game_state.get("community_cards", [])
+            if len(hole_cards) == 2 and len(community) >= 3:
+                rank, _, _ = hand_evaluator.evaluate_hand(hole_cards, community)
+                hand_ranks[pid] = rank
+    po = game_state.get("player_order") or []
+    dp = min(game_state.get("dealer_button_position", 0), len(po) - 1) if po else 0
+    dealer_pid = po[dp] if 0 <= dp < len(po) else None
+    winnings = pot_manager.distribute_pots(pots, hand_ranks, players_for_pot, player_order=po, dealer_pid=dealer_pid)
+    for pid, amount in winnings.items():
+        game_state["players"][pid]["stack"] = game_state["players"][pid].get("stack", 0) + amount
+        print(f"Player {pid} wins {amount}")
+
+    if game_state.get("insurance_purchase"):
+        buy = game_state["insurance_purchase"]
+        pid = buy.get("player_idx")
+        payout = buy.get("payout_if_lose", 0)
+        if pid is not None and payout and pid in game_state.get("players", {}):
+            chips_after = game_state["players"][pid].get("stack", 0)
+            if insurance_buyer_chips_before is not None and chips_after == insurance_buyer_chips_before:
+                game_state["players"][pid]["stack"] = chips_after + payout
+        game_state["insurance_purchase"] = None
+
+    game_state["pot"] = 0
+    game_state["stage"] = GameStage.ENDED
+    game_state["winners"] = list(winnings.keys())
+    game_state["pots"] = pots
+    game_state["last_hand_winnings"] = dict(winnings)
+
+
+def _deal_runout_and_showdown(game_state):
+    """发完剩余公共牌并比牌（用于保险决定后）。要求当前为 FLOP 或 TURN，且 pending_insurance 已清。"""
+    community = game_state.get("community_cards", [])
+    deck = game_state.get("deck")
+    if not deck or len(community) >= 5:
+        if len(community) >= 5:
+            game_state["stage"] = GameStage.SHOWDOWN
+            _run_showdown(game_state)
+        return
+    need = 5 - len(community)
+    for _ in range(need):
+        if hasattr(deck, "draw") and len(deck.cards) > 0:
+            game_state["community_cards"].append(deck.draw(1))
+    game_state["stage"] = GameStage.SHOWDOWN
+    _run_showdown(game_state)
+
+
+def resolve_insurance(game_state, amount):
+    """
+    处理保险：不买传 0，买则传保费。会清空 pending_insurance，可选扣费并记录 insurance_purchase，然后发完 runout 并比牌。
+    返回 True 表示已处理，False 表示无待处理保险。
+    """
+    pending = game_state.get("pending_insurance")
+    if not pending:
+        return False
+    leading_pid = pending.get("leading_pid")
+    equity = pending.get("equity", 0)
+    game_state["pending_insurance"] = None
+    amount = int(amount or 0)
+    if amount > 0 and leading_pid and leading_pid in game_state.get("players", {}):
+        leader = game_state["players"][leading_pid]
+        premium = min(amount, leader.get("stack", 0))
+        if premium > 0:
+            leader["stack"] = leader.get("stack", 0) - premium
+            payout = int(premium / max(1 - equity, 0.01))
+            game_state["insurance_purchase"] = {
+                "player_idx": leading_pid,
+                "premium": premium,
+                "payout_if_lose": payout,
+            }
+    _deal_runout_and_showdown(game_state)
+    return True
+
+
 def advance_to_next_stage(game_state):
     """
     Advances the game to the next stage (e.g., from Pre-flop to Flop).
@@ -263,6 +409,23 @@ def advance_to_next_stage(game_state):
         # TODO: Implement showdown logic here
         return game_state
 
+    # 进入 TURN/RIVER 前若全员 All-in，则挂起并提供保险（仅领先且人类且胜率非 0/1 且有余筹）
+    if next_stage in (GameStage.TURN, GameStage.RIVER):
+        in_hand = [pid for pid, p in game_state["players"].items() if p.get("is_in_hand")]
+        all_in = [pid for pid in in_hand if game_state["players"][pid].get("is_all_in")]
+        if len(in_hand) == len(all_in) and len(all_in) >= 2:
+            leading_pid, equities = _compute_equity(game_state)
+            if leading_pid is not None:
+                eq = equities.get(leading_pid, 0)
+                leader = game_state["players"][leading_pid]
+                if 0 < eq < 1 and not leader.get("is_bot") and leader.get("stack", 0) > 0:
+                    game_state["pending_insurance"] = {
+                        "leading_pid": leading_pid,
+                        "equity": round(eq, 4),
+                        "all_in_pids": all_in,
+                    }
+                    return game_state
+
     game_state['stage'] = next_stage
     print(f"Advancing from {current_stage.name} to {next_stage.name}")
 
@@ -281,43 +444,7 @@ def advance_to_next_stage(game_state):
         print(f"Dealt river: {river_card}")
     elif next_stage == GameStage.SHOWDOWN:
         print("All betting rounds are over. Proceeding to showdown.")
-        
-        # 使用 pot_manager 计算边池和分配
-        from . import pot_manager
-        
-        # 准备玩家状态（包含 total_bet_this_hand）
-        players_for_pot = {}
-        for pid, pstate in game_state['players'].items():
-            players_for_pot[pid] = {
-                'total_bet_this_hand': pstate.get('total_bet_this_hand', 0),
-                'is_folded': not pstate.get('is_in_hand', False) or not pstate.get('is_active', False)
-            }
-        
-        # 计算边池
-        pots = pot_manager.calculate_side_pots(players_for_pot)
-        
-        # 评估所有玩家的手牌
-        hand_ranks = {}
-        for pid, pstate in game_state['players'].items():
-            if pstate.get('is_in_hand') and pstate.get('is_active'):
-                hole_cards = pstate.get('hole_cards', [])
-                community = game_state.get('community_cards', [])
-                if len(hole_cards) == 2 and len(community) >= 3:
-                    rank, _, _ = hand_evaluator.evaluate_hand(hole_cards, community)
-                    hand_ranks[pid] = rank
-        
-        # 分配奖金
-        winnings = pot_manager.distribute_pots(pots, hand_ranks, players_for_pot)
-        
-        for pid, amount in winnings.items():
-            game_state['players'][pid]['stack'] += amount
-            print(f"Player {pid} wins {amount}")
-        
-        game_state['pot'] = 0
-        game_state['stage'] = GameStage.ENDED
-        game_state['winners'] = list(winnings.keys())
-        game_state['pots'] = pots
-        game_state['last_hand_winnings'] = dict(winnings)
+        _run_showdown(game_state)
         return game_state
 
 

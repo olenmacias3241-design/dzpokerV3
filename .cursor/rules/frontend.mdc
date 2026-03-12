@@ -1,0 +1,12 @@
+---
+description: 前端约定（templates、static、大厅/商城/牌桌页）
+globs: templates/**/*.html,static/**/*.js,static/**/*.css
+alwaysApply: false
+---
+
+# 前端开发规则
+
+- **页面**：`base.html` 为布局与导航；大厅 `lobby.html`、商城 `mall.html`、牌桌 `index.html`，登录/注册 `login.html`、`register.html`。样式：`style_common.css` 公用，`style_new.css` 含牌桌与大厅轮播。
+- **接口**：所有请求带 token（Header 或 body）；API 基址由 `config.js` 或页面内 `window.DZPOKER_API_BASE` 决定，见 `ARCHITECTURE.md`。
+- **大厅**：牌桌列表来自 `GET /api/lobby/tables`；创建桌 `POST /api/lobby/tables`，入座 `POST /api/tables/<id>/sit`，再跳转牌桌页带 `table` 与 `token`。
+- **牌桌页**：从 URL 取 `table`、`token`，仅连接当前桌 WebSocket（`join_table`），只消费该桌的 `game:state_update`。规格见 `docs/requirements/04_game_table_ui_ux.md`、`docs/requirements/05_api_definitions.md`。

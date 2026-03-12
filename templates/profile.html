@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}个人中心 · DZPoker{% endblock %}
+{% block content %}
+<div class="profile-page">
+    <h1 class="page-title">个人中心</h1>
+    <div id="profile-require-login" class="panel" style="display: none;">
+        <p>请先 <a href="/login">登录</a> 后查看个人资料。</p>
+    </div>
+    <div id="profile-content" class="panel" style="display: none;">
+        <div class="profile-header">
+            <div class="profile-avatar" id="profile-avatar">—</div>
+            <div class="profile-meta">
+                <h2 id="profile-username" class="profile-username"></h2>
+                <p class="profile-id">ID: <span id="profile-user-id"></span></p>
+            </div>
+        </div>
+        <dl class="profile-stats">
+            <dt>筹码余额</dt>
+            <dd id="profile-coins" class="profile-value">—</dd>
+            <dt>等级 / 经验</dt>
+            <dd id="profile-level" class="profile-value">—</dd>
+            <dt>总局数</dt>
+            <dd id="profile-hands" class="profile-value">—</dd>
+            <dt>胜率</dt>
+            <dd id="profile-winrate" class="profile-value">—</dd>
+            <dt>最大底池</dt>
+            <dd id="profile-biggest-pot" class="profile-value">—</dd>
+        </dl>
+        <p class="profile-hint">修改昵称、头像等需后端接口支持，当前为只读展示。</p>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+    var token = (window.authGetToken && window.authGetToken()) || localStorage.getItem('token') || '';
+    var requireEl = document.getElementById('profile-require-login');
+    var contentEl = document.getElementById('profile-content');
+    if (!token) {
+        requireEl.style.display = 'block';
+        return;
+    }
+    var url = (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl('/api/auth/me') : '/api/auth/me';
+    fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.ok || !data.userProfile) {
+                requireEl.style.display = 'block';
+                return;
+            }
+            var p = data.userProfile;
+            contentEl.style.display = 'block';
+            document.getElementById('profile-username').textContent = p.username || '未设置昵称';
+            document.getElementById('profile-user-id').textContent = p.userId != null ? p.userId : '—';
+            document.getElementById('profile-coins').textContent = p.coinsBalance != null ? Number(p.coinsBalance).toLocaleString() : '—';
+            document.getElementById('profile-level').textContent = (p.level != null ? p.level : '—') + ' / ' + (p.experiencePoints != null ? p.experiencePoints : '—');
+            document.getElementById('profile-hands').textContent = (p.stats && p.stats.totalHandsPlayed != null) ? p.stats.totalHandsPlayed : '—';
+            document.getElementById('profile-winrate').textContent = (p.stats && p.stats.winRate != null) ? p.stats.winRate + '%' : '—';
+            document.getElementById('profile-biggest-pot').textContent = (p.stats && p.stats.biggestPotWon != null) ? p.stats.biggestPotWon.toLocaleString() : '—';
+            var avatarEl = document.getElementById('profile-avatar');
+            if (p.avatarUrl) {
+                avatarEl.style.backgroundImage = 'url(' + p.avatarUrl + ')';
+                avatarEl.textContent = '';
+            }
+        })
+        .catch(function() {
+            requireEl.style.display = 'block';
+        });
+})();
+</script>
+{% endblock %}

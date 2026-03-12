@@ -73,13 +73,13 @@ class SmartBotAI:
             # 不足5张，简单评估
             return self._evaluate_preflop(hole_cards) * 0.8
         
-        # 使用 hand_evaluator 评估
+        # 使用 hand_evaluator 评估（传入底牌 + 公共牌，返回 rank 元组）
         try:
-            rank, _ = evaluate_hand(all_cards)
-            # rank: 0-8 (High Card to Straight Flush)
-            # 转换为 0-1
-            return (rank + 1) / 9.0
-        except:
+            rank_tuple, _ = evaluate_hand(hole_cards, community_cards[:5])
+            # rank_tuple[0] = hand level 0-9（高牌到皇家同花顺）
+            level = rank_tuple[0] if isinstance(rank_tuple, tuple) else 0
+            return (level + 1) / 10.0
+        except Exception:
             return 0.5
     
     def _evaluate_preflop(self, hole_cards):
