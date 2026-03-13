@@ -48,6 +48,38 @@ class UserWallet(Base):
     is_primary = Column(Boolean, default=False, nullable=False)
     bound_at = Column(DateTime, default=datetime.utcnow)
 
+
+# ---------- 约局（docs/requirements/13_scheduled_game_mode.md） ----------
+class ScheduledGame(Base):
+    __tablename__ = 'scheduled_games'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(128), nullable=False)
+    host_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    club_id = Column(Integer, ForeignKey('clubs.id'), nullable=True)
+    start_at = Column(DateTime, nullable=False)
+    start_rule = Column(String(32), default='scheduled_or_full', nullable=False)
+    min_players = Column(Integer, default=2, nullable=False)
+    max_players = Column(Integer, nullable=False)
+    blinds_json = Column(String(128), nullable=False)
+    buy_in_min = Column(BigInteger, nullable=True)
+    buy_in_max = Column(BigInteger, nullable=True)
+    initial_chips = Column(BigInteger, nullable=True)
+    password_hash = Column(String(255), nullable=True)
+    invite_code = Column(String(64), unique=True, nullable=False)
+    status = Column(String(32), default='Scheduled', nullable=False)
+    table_id = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ScheduledGamePlayer(Base):
+    __tablename__ = 'scheduled_game_players'
+    scheduled_game_id = Column(Integer, ForeignKey('scheduled_games.id', ondelete='CASCADE'), primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+    registered_at = Column(DateTime, default=datetime.utcnow)
+    seat_order = Column(Integer, default=0, nullable=False)
+
+
 class GameTable(Base):
     __tablename__ = 'game_tables'
     id = Column(Integer, primary_key=True)
@@ -57,6 +89,7 @@ class GameTable(Base):
     max_players = Column(Integer, default=6)
     status = Column(String(20), default='waiting')
     club_id = Column(Integer, ForeignKey('clubs.id'), nullable=True)  # 新增：关联俱乐部
+    scheduled_game_id = Column(Integer, ForeignKey('scheduled_games.id'), nullable=True)  # 约局开桌后关联
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class TableSeat(Base):

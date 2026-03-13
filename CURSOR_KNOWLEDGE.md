@@ -4,6 +4,8 @@
 
 **知识库入口**：**`docs/knowledge/README.md`** — 内含全部规格与知识文档的索引入口，按模块分类并标注何时 @ 引用。
 
+**文档维护分工**：知识库与需求文档（`docs/knowledge/`、`docs/requirements/`）的编写与整理由专人负责；具体开发实现（代码、接口实现、前端页面）由开发按文档执行，不混入文档职责。
+
 ---
 
 ## 一、知识库组成
@@ -39,6 +41,7 @@
 | **docs/requirements/11_club_design.md** | 俱乐部设计（创建、成员、俱乐部牌桌） |
 | **docs/requirements/12_tournaments_sng_mtt.md** | 锦标赛规格（SNG、MTT 标准赛事） |
 | **docs/requirements/13_scheduled_game_mode.md** | 约局模式（预约牌局、定时/满人即开、邀请、俱乐部） |
+| **docs/requirements/14_multi_ui_config.md** | 多 UI 版本配置（主题/版本/字体/动效/音效） |
 | **docs/knowledge/TEXAS_HOLDEM_PLAY_AND_RULES.md** | 标准德州扑克玩法与打牌需求（完整规则） |
 | **docs/knowledge/POKER_KNOWLEDGE_BASE.md** | 德州扑克术语与规则（改逻辑时参考） |
 | **database/SCHEMA.md** | 数据库说明 |
@@ -70,6 +73,7 @@
 - `@docs/requirements/11_club_design.md`：问俱乐部、成员角色、俱乐部牌桌。
 - `@docs/requirements/12_tournaments_sng_mtt.md`：问 SNG/MTT、报名、盲注结构、换桌合桌、奖励圈。
 - `@docs/requirements/13_scheduled_game_mode.md`：问约局、创建预约牌局、定时开赛、邀请链接、俱乐部内约局。
+- `@docs/requirements/14_multi_ui_config.md`：问多 UI 版本、主题切换、设置页、动效/音效开关。
 - `@docs/knowledge/README.md`：查知识库与规格的完整索引。
 - `@README.md`：问怎么跑、文档结构。
 

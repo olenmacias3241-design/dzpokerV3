@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}DZPoker{% endblock %}</title>
     <link rel="stylesheet" href="/static/app.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/config.js"></script>
+    <script src="/static/ui-config.js"></script>
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -16,8 +19,31 @@
             <a href="{{ url_for('mall') }}" class="{% if request.endpoint == 'mall' %}active{% endif %}">商城</a>
             <a href="/clubs" class="{% if request.endpoint == 'clubs_page' or request.endpoint == 'club_detail_page' %}active{% endif %}">俱乐部</a>
             <a href="/tournaments" class="{% if request.endpoint == 'tournaments_page' or request.endpoint == 'tournament_detail_page' or request.endpoint == 'tournament_lobby_page' %}active{% endif %}">锦标赛</a>
+            <a href="{{ url_for('settings_page') }}" class="{% if request.endpoint == 'settings_page' %}active{% endif %}">设置</a>
         </div>
         <div class="nav-right">
+            <div class="nav-ui-switcher" id="nav-ui-switcher" title="主题 / 界面">
+                <button type="button" class="nav-ui-btn nav-ui-btn--theme" id="nav-theme-btn" aria-label="切换主题" title="切换主题">🌓</button>
+                <div class="nav-ui-dropdown" id="nav-ui-dropdown" aria-hidden="true">
+                    <div class="nav-ui-dropdown-section">
+                        <span class="nav-ui-dropdown-label">主题</span>
+                        <button type="button" data-theme="light">浅色</button>
+                        <button type="button" data-theme="dark">深色</button>
+                        <button type="button" data-theme="system">跟随系统</button>
+                    </div>
+                    <div class="nav-ui-dropdown-section">
+                        <span class="nav-ui-dropdown-label">界面</span>
+                        <button type="button" data-ui="default">默认</button>
+                        <button type="button" data-ui="compact">简约</button>
+                    </div>
+                    <div class="nav-ui-dropdown-section nav-ui-dropdown-skins" id="nav-ui-skins">
+                        <span class="nav-ui-dropdown-label">风格（10 套）</span>
+                        <div class="nav-ui-skin-btns" id="nav-ui-skin-btns"></div>
+                        <a href="{{ url_for('settings_page') }}#skins" class="nav-ui-dropdown-link">全部风格 →</a>
+                    </div>
+                    <a href="{{ url_for('settings_page') }}" class="nav-ui-dropdown-link">全部设置 →</a>
+                </div>
+            </div>
             <span class="nav-guest" id="nav-guest">
                 <a href="/login">登录</a>
                 <a href="/register">注册</a>
@@ -35,6 +61,7 @@
     </main>
     <script src="/static/config.js"></script>
     <script src="/static/auth.js"></script>
+    <script src="/static/nav-ui.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

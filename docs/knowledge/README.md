@@ -71,6 +71,7 @@
 | 文档 | 说明 | 何时 @ |
 |------|------|--------|
 | **docs/requirements/06_database_schema.md** | 数据库表结构：users、user_wallets、game_hands、clubs、tournaments 等 | 建表、改表、查字段 |
+| **docs/requirements/14_multi_ui_config.md** | 多 UI 版本配置：主题/UI 版本/字体/动效/音效、本地与服务端存储、API、URL 参数 | 做主题切换、设置页、多皮肤 |
 | **docs/requirements/07_non_functional_requirements.md** | 非功能需求 | 性能、安全、可用性 |
 | **docs/requirements/08_future_features.md** | 未来功能（V1.5–V3）与各 spec 引用 | 排期、迭代范围 |
 | **docs/requirements/09_ui_ux_animations.md** | UI/UX 动效 | 做动效与体验 |
@@ -89,6 +90,7 @@
 - 问约局（预约牌局、定时开桌、邀请）：`@docs/requirements/13_scheduled_game_mode.md`
 - 问 SNG/MTT：`@docs/requirements/12_tournaments_sng_mtt.md`
 - 问库表：`@docs/requirements/06_database_schema.md`
+- 问多 UI 版本/主题/设置：`@docs/requirements/14_multi_ui_config.md`
 
 ### 开发前建议
 

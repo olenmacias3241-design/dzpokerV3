@@ -17,6 +17,22 @@ CREATE TABLE users (
 );
 ```
 
+可选：用户 UI 配置（见 docs/requirements/14_multi_ui_config.md）。可在 `users` 表增加 `ui_config_json` 字段，或使用独立 `user_settings` 表。
+```sql
+-- 方案 A：users 表增加字段
+-- ALTER TABLE users ADD COLUMN ui_config_json TEXT NULL;
+
+-- 方案 B：独立表（键值，可扩展其它设置）
+-- CREATE TABLE user_settings (
+--     user_id INT NOT NULL,
+--     key VARCHAR(64) NOT NULL,
+--     value_json TEXT NOT NULL,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--     PRIMARY KEY (user_id, key),
+--     FOREIGN KEY (user_id) REFERENCES users(id)
+-- );
+```
+
 ### `user_wallets`（加密钱包绑定）
 存储用户与链上地址的绑定关系；同一用户可绑定多条链、多个地址。
 ```sql

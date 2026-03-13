@@ -90,6 +90,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const betSlider = document.getElementById('bet-slider');
 
     startGameBtn.addEventListener('click', startGame);
+    const fillBotsBtn = document.getElementById('fill-bots-btn');
+    if (fillBotsBtn) {
+        fillBotsBtn.addEventListener('click', function () {
+            if (!tableId || !token) return;
+            fillBotsBtn.disabled = true;
+            fillBotsBtn.textContent = '拉取中…';
+            fetch(apiUrl('/api/tables/' + tableId + '/fill_bots'), { method: 'POST' })
+                .then(function (r) { return r.json().catch(function () { return {} }); })
+                .then(function (body) {
+                    fillBotsBtn.disabled = false;
+                    fillBotsBtn.textContent = '拉机器人';
+                    loadTableAndGame();
+                })
+                .catch(function () {
+                    fillBotsBtn.disabled = false;
+                    fillBotsBtn.textContent = '拉机器人';
+                    loadTableAndGame();
+                });
+        });
+    }
     const leaveSeatBtn = document.getElementById('leave-seat-btn');
     if (leaveSeatBtn) {
         leaveSeatBtn.addEventListener('click', function () {
@@ -122,12 +142,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (callBtn) callBtn.addEventListener('click', () => sendAction('call'));
     allInBtn.addEventListener('click', () => sendAction('all_in'));
     betBtn.addEventListener('click', () => {
-        const amount = betAmountInput.value ? parseInt(betAmountInput.value, 10) : (betSlider ? parseInt(betSlider.value, 10) : 0);
-        if (amount > 0) {
-            sendAction('bet', amount);
-        } else {
+        const raw = betAmountInput.value != null && betAmountInput.value !== '' ? betAmountInput.value : (betSlider ? betSlider.value : '0');
+        const totalToPut = parseInt(raw, 10);
+        if (isNaN(totalToPut) || totalToPut <= 0) {
             alert('请输入有效的下注金额');
+            return;
         }
+        /* 有人已下注时后端要求发 raise（加注额=总投入-当前跟注额），否则发 bet */
+        const amountToCall = (lastState && lastState.amount_to_call != null) ? lastState.amount_to_call : 0;
+        const action = amountToCall > 0 ? 'raise' : 'bet';
+        let sendAmount = action === 'raise' ? (totalToPut - amountToCall) : totalToPut;
+        sendAmount = Math.max(0, Math.floor(sendAmount));
+        if (action === 'raise' && sendAmount <= 0) {
+            alert('加注额必须大于当前跟注额，请调整拉杆或输入金额');
+            return;
+        }
+        sendAction(action, sendAmount);
     });
     if (betSlider) {
         betSlider.addEventListener('input', () => {
@@ -308,6 +338,8 @@ function loadTableAndGame() {
             var leaveWrap = document.getElementById('leave-seat-wrap');
             if (data.status === 'waiting') {
                 if (leaveWrap) leaveWrap.style.display = (mySeat >= 0 ? 'block' : 'none');
+                var fillBotsEl = document.getElementById('fill-bots-btn');
+                if (fillBotsEl) fillBotsEl.style.display = (mySeat >= 0 ? 'inline-block' : 'none');
                 if (data.can_start) {
                     document.getElementById('start-game-btn').style.display = 'block';
                     document.getElementById('start-game-btn').textContent = '开始对局';
@@ -350,8 +382,10 @@ function loadTableAndGame() {
                     document.getElementById('stage-display').textContent = '等待对手加入（当前 ' + (data.player_count || 0) + '/' + (data.max_players || 2) + ' 人）';
                     document.getElementById('start-game-btn').style.display = 'none';
                 }
+                if (fillBotsEl) fillBotsEl.style.display = (mySeat >= 0 ? 'inline-block' : 'none');
                 return;
             }
+            if (document.getElementById('fill-bots-btn')) document.getElementById('fill-bots-btn').style.display = 'none';
             if (leaveWrap) leaveWrap.style.display = 'none';
             if (data.status === 'playing' && data.game_state) {
                 lastState = data.game_state;
@@ -506,7 +540,10 @@ async function sendAction(action, amount = 0) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-    }).then(function (r) { return r.json(); }).then(function (s) { if (s && !s.error) updateUI(s); });
+    }).then(function (r) { return r.json(); }).then(function (s) {
+        if (s && s.error) alert(s.error);
+        if (s && !s.error) updateUI(s);
+    });
 }
 
 async function sendEmote(emote) {
@@ -560,24 +597,74 @@ function normalizePlayer(player, seatIndex) {
 }
 
 function updateUI(state) {
+    var prevPot = lastState && lastState.pot != null ? lastState.pot : 0;
+    var prevBets = (lastState && lastState.players) ? lastState.players.map(function (p) {
+        return p && (p.current_bet != null ? p.current_bet : (p.bet_this_round != null ? p.bet_this_round : 0));
+    }) : [];
+    var prevStage = (lastState && lastState.stage != null) ? String(lastState.stage).toLowerCase() : '';
     lastState = state;
     var stage = (state.stage != null ? String(state.stage) : '').toLowerCase();
     var stageVal = stage;
     document.getElementById('stage-display').innerText = stageLabel(stageVal);
     const turnEl = document.getElementById('turn-display');
+    if (window._turnCountdownInterval) {
+        clearInterval(window._turnCountdownInterval);
+        window._turnCountdownInterval = null;
+    }
     if (turnEl) {
-        if (state.is_running && state.current_player_name != null && state.current_player_name !== '') {
-            turnEl.textContent = '轮到 ' + state.current_player_name + ' 下注';
+        var curIdx = state.current_player_idx;
+        var hasCurrentPlayer = state.is_running && curIdx != null && curIdx !== undefined;
+        /* 轮到任何人（含机器人）都显示「轮到 XXX 下注」；进度条改由各座位内 .seat-countdown 显示 */
+        if (hasCurrentPlayer) {
+            var whoName = (state.current_player_name && state.current_player_name.trim()) || (state.players && state.players[curIdx] && state.players[curIdx].name) || ('座位 ' + (curIdx + 1));
+            turnEl.textContent = '轮到 ' + whoName + ' 下注';
             turnEl.style.display = 'block';
-        } else if (state.street_label && stage !== 'showdown' && stage !== 'ended') {
-            turnEl.textContent = state.street_label + ' · 等待下注';
-            turnEl.style.display = 'block';
+            if (curIdx !== window._countdownForSeat) {
+                window._countdownForSeat = curIdx;
+                window._countdownElapsed = 0;
+                window._countdownTotalSec = 5;
+                if (window._turnCountdownInterval) clearInterval(window._turnCountdownInterval);
+                window._turnCountdownInterval = setInterval(function tick() {
+                    if (window._countdownForSeat == null) return;
+                    window._countdownElapsed = (window._countdownElapsed || 0) + 0.1;
+                    var left = Math.max(0, (window._countdownTotalSec || 5) - window._countdownElapsed);
+                    var pct = (left / (window._countdownTotalSec || 5)) * 100;
+                    var seatEl = document.querySelector('.seat-countdown[data-seat-id="' + window._countdownForSeat + '"]');
+                    if (seatEl) {
+                        var bar = seatEl.querySelector('.turn-countdown-bar');
+                        var text = seatEl.querySelector('.turn-countdown-text');
+                        if (bar) bar.style.width = pct + '%';
+                        if (text) text.textContent = Math.ceil(left);
+                        seatEl.style.display = 'flex';
+                    }
+                    if (left <= 0) {
+                        if (window._turnCountdownInterval) { clearInterval(window._turnCountdownInterval); window._turnCountdownInterval = null; }
+                        if (seatEl) seatEl.style.display = 'none';
+                        window._countdownForSeat = null;
+                    }
+                }, 100);
+            }
         } else {
-            turnEl.textContent = '';
-            turnEl.style.display = 'none';
+            window._countdownForSeat = null;
+            if (window._turnCountdownInterval) { clearInterval(window._turnCountdownInterval); window._turnCountdownInterval = null; }
+            if (state.street_label && stage !== 'showdown' && stage !== 'ended') {
+                turnEl.textContent = state.street_label + ' · 等待下注';
+                turnEl.style.display = 'block';
+            } else {
+                turnEl.textContent = '';
+                turnEl.style.display = 'none';
+            }
         }
     }
     document.getElementById('pot-display').innerText = state.pot != null ? state.pot : 0;
+    var potNum = state.pot != null ? state.pot : 0;
+    if (potNum > prevPot) {
+        var potWrap = document.getElementById('pot-display');
+        if (potWrap && potWrap.parentElement) {
+            potWrap.parentElement.classList.add('pot-bump');
+            setTimeout(function () { potWrap.parentElement.classList.remove('pot-bump'); }, 500);
+        }
+    }
     const sidePotEl = document.getElementById('side-pots-display');
     if (sidePotEl) {
         if (state.side_pots && state.side_pots.length > 0) {
@@ -607,9 +694,14 @@ function updateUI(state) {
         if (streetHintEl) {
             streetHintEl.style.display = (state.pending_street && state.stage !== 'ended') ? 'block' : 'none';
         }
+        /* 牌型实时显示（后端翻牌后返回 my_hand_type） */
+        var handTypeDisplayEl = document.getElementById('my-hand-type-display');
+        if (handTypeDisplayEl) handTypeDisplayEl.textContent = state.my_hand_type || '—';
     } else {
         if (myStatsEl) myStatsEl.style.display = 'none';
         if (streetHintEl) streetHintEl.style.display = 'none';
+        var handTypeDisplayEl = document.getElementById('my-hand-type-display');
+        if (handTypeDisplayEl) handTypeDisplayEl.textContent = '—';
     }
     document.getElementById('last-action-display').innerText = state.last_action || '';
 
@@ -622,9 +714,13 @@ function updateUI(state) {
     }
     animateCards(communityContainer, communityCards, stage);
 
+    /* 牌型仅显示在己方控制台 #my-hand-type-display，不在桌面中央展示 */
+
     const playersContainer = document.getElementById('player-seats');
+    /* 使用各座位内嵌的 .seat-countdown，不再移动全局 countdown 节点 */
     playersContainer.innerHTML = '';
     var maxSeats = state.max_players || (state.players && state.players.length) || 6;
+    /* prevStage 用于己方手牌：仅在本局首次进入 preflop 时播发牌动画，避免每次 state 更新都闪 */
     var slots = [];
     for (var si = 0; si < maxSeats; si++) {
         slots.push(state.players && state.players[si] != null ? state.players[si] : null);
@@ -661,8 +757,8 @@ function updateUI(state) {
     }
     var positions = maxSeats <= 6 ? seatLayout6 : seatLayout8;
 
-    /* 本局手牌发牌动画样式随机（每轮可不同） */
-    var holeDealStyle = 'deal-hole-' + (1 + Math.floor(Math.random() * 6));
+    /* 本局手牌发牌动画样式随机（1–9 多种搞笑款，每轮可不同） */
+    var holeDealStyle = 'deal-hole-' + (1 + Math.floor(Math.random() * 9));
 
     /* 当前玩家始终显示在牌桌底部：positions[0] 对应椭圆 90° 在屏幕下方，故底部索引为 0 */
     var bottomIdx = 0;
@@ -713,7 +809,8 @@ function updateUI(state) {
         /* 仅自己或摊牌/结束阶段显示牌面；摊牌后未弃牌玩家的手牌对所有人可见 */
         const showCardFaces = (realSeat === mySeat || stage === 'showdown' || stage === 'ended') && p.hand && p.hand.length > 0;
         const isRed = (s) => s === '♥' || s === '♦';
-        const isPreflopDeal = stage === 'preflop' && !p.has_folded && (p.hand && p.hand.length === 2 || !showCardFaces);
+        /* 发牌动画：仅在本手牌首次进入 preflop 时播放（己方也播一次）；后续 preflop 更新不再播，避免闪烁 */
+        const isPreflopDeal = stage === 'preflop' && !p.has_folded && (p.hand && p.hand.length === 2 || !showCardFaces) && (realSeat !== mySeat || prevStage !== 'preflop');
         const holeDelay0 = realSeat * 130;
         const holeDelay1 = realSeat * 130 + 180;
         const holeStyleClass = isPreflopDeal ? ' card-deal-hole ' + holeDealStyle : '';
@@ -733,6 +830,10 @@ function updateUI(state) {
                     handHtml += '<div class="card ' + suitClass + visClass + dealClass + '"' + dealStyle + '>' + suit + rank + '</div>';
                 }
             });
+            /* 若后端未下发该座位的 hand 导致 handHtml 仍为空，仍显示 2 张牌背，避免最上/右下角等座位牌不显示 */
+            if (!handHtml && !p.has_folded) {
+                handHtml = '<div class="card-back"></div><div class="card-back"></div>';
+            }
         } else {
             const count = p.has_folded ? 0 : 2;
             for (let k = 0; k < count; k++) {
@@ -742,7 +843,15 @@ function updateUI(state) {
                 handHtml += '<div class="card-back' + dealClass + '"' + dealStyle + '></div>';
             }
         }
+        /* 兜底：未弃牌但 hand 为空时仍显示 2 张牌背，避免顶部/右下角等座位牌不显示 */
+        if (handHtml === '' && !p.has_folded) {
+            handHtml = '<div class="card-back"></div><div class="card-back"></div>';
+        }
 
+        /* 每个座位内嵌倒计时条，轮到该座位时显示（含机器人），避免移动 DOM 导致不显示 */
+        var seatCountdownHtml = '<div class="seat-countdown turn-countdown-wrap turn-countdown-under-seat" data-seat-id="' + realSeat + '" style="display:none;" aria-label="行动倒计时">' +
+            '<div class="turn-countdown-track"><div class="turn-countdown-bar" style="width:100%"></div></div>' +
+            '<span class="turn-countdown-text">5</span></div>';
         seatDiv.innerHTML =
             '<div class="player-info ' + (state.current_player_idx === realSeat && state.is_running ? 'active' : '') + ' ' + (p.has_folded ? 'folded' : '') + (isWinner ? ' winner' : '') + '">' +
             '<div class="player-hand-wrap">' +
@@ -756,15 +865,44 @@ function updateUI(state) {
             '<span class="bet-line">本街下注: ' + (p.current_bet != null ? p.current_bet : 0) + '</span>' +
             (p.is_all_in ? '<span class="all-in-tag">All-in</span>' : '') +
             (realSeat === mySeat && state.my_hand_type ? '<div class="my-hand-type">' + state.my_hand_type + '</div>' : '') +
-            '</div></div>';
+            '</div></div>' +
+            seatCountdownHtml;
         playersContainer.appendChild(seatDiv);
     }
 
-    /* 底牌发牌动画可能因第二局等未触发，1.5s 后强制显示所有手牌 */
+    /* 下注动效：本街下注增加的座位高亮 */
+    if (state.players && prevBets.length >= 0) {
+        for (var sb = 0; sb < state.players.length; sb++) {
+            var prevBet = prevBets[sb] != null ? prevBets[sb] : 0;
+            var curP = state.players[sb];
+            var curBet = curP && (curP.current_bet != null ? curP.current_bet : (curP.bet_this_round != null ? curP.bet_this_round : 0));
+            if (curBet > prevBet) {
+                var seatEl = playersContainer.querySelector('.player-seat[data-seat="' + sb + '"]');
+                if (seatEl) {
+                    var infoEl = seatEl.querySelector('.player-info');
+                    if (infoEl) {
+                        infoEl.classList.add('bet-bump');
+                        (function (el) {
+                            setTimeout(function () { el.classList.remove('bet-bump'); }, 450);
+                        })(infoEl);
+                    }
+                }
+            }
+        }
+    }
+
+    /* 显示当前行动座位的倒计时条（含机器人），其余隐藏 */
+    document.querySelectorAll('.seat-countdown').forEach(function (el) { el.style.display = 'none'; });
+    if (window._countdownForSeat != null) {
+        var curSeatCd = document.querySelector('.seat-countdown[data-seat-id="' + window._countdownForSeat + '"]');
+        if (curSeatCd) curSeatCd.style.display = 'flex';
+    }
+
+    /* 底牌发牌动画：约 0.8s 后为所有带 card-deal-hole 的牌加上 visible，触发收尾动画 */
     setTimeout(function () {
         var holeCards = document.querySelectorAll('.player-hand .card-deal-hole');
         holeCards.forEach(function (el) { el.classList.add('visible'); });
-    }, 1500);
+    }, 800);
 
     const isOurTurn = state.is_running && state.current_player_idx === mySeat;
     const callAmount = state.call_amount || 0;
@@ -807,7 +945,36 @@ function updateUI(state) {
             document.getElementById('start-game-btn').style.display = 'none';
         } else {
             if (dealControls) dealControls.style.display = 'none';
-            document.getElementById('action-controls').style.display = isOurTurn ? 'block' : 'none';
+            /* 控制台始终显示：已落座且非保险/发牌阶段时一直展示，非自己回合显示等待文案 */
+            var showActions = mySeat >= 0;
+            var actionControlsEl = document.getElementById('action-controls');
+            if (actionControlsEl) {
+                actionControlsEl.style.display = showActions ? 'block' : 'none';
+                var turnWaitEl = document.getElementById('turn-wait-msg');
+                var actionsRow = actionControlsEl.querySelector('.actions-row');
+                if (showActions && turnWaitEl && actionsRow) {
+                    var betControlsEl = actionControlsEl.querySelector('.bet-controls');
+                    if (state.is_running) {
+                        if (isOurTurn) {
+                            turnWaitEl.style.display = 'none';
+                            actionsRow.style.display = 'flex';
+                            if (betControlsEl) betControlsEl.style.display = '';
+                            actionsRow.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+                        } else {
+                            var who = state.current_player_name || ('座位' + (state.current_player_idx != null ? state.current_player_idx + 1 : '?'));
+                            turnWaitEl.textContent = '等待 ' + who + ' 下注';
+                            turnWaitEl.style.display = 'block';
+                            actionsRow.style.display = 'flex';
+                            if (betControlsEl) betControlsEl.style.display = 'none';
+                            actionsRow.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+                        }
+                    } else {
+                        turnWaitEl.style.display = 'none';
+                        actionsRow.style.display = 'none';
+                        if (betControlsEl) betControlsEl.style.display = 'none';
+                    }
+                }
+            }
             document.getElementById('start-game-btn').style.display = (state.is_running ? 'none' : 'block');
             var startBtn = document.getElementById('start-game-btn');
             if (startBtn) startBtn.textContent = state.winner_info ? '开始新一局' : '开始对局';
@@ -842,7 +1009,7 @@ function updateUI(state) {
     }
 
     if (state.winner_info) {
-        showWinnerAnimation(state.winner_info, state.winner_idx, state.players, state.winner_amount);
+        showWinnerAnimation(state.winner_info, state.winner_idx, state.players, state.winner_amount, state.winner_hand_type);
     } else {
         hideWinnerOverlay();
     }
@@ -880,42 +1047,6 @@ function parseCardForDisplay(cardData) {
     return { suit: suit, rank: rank };
 }
 
-function playDealPhaseAnimation(phase, cards) {
-    var container = document.getElementById('community-cards-display');
-    if (!container || !Array.isArray(cards)) return;
-    var isRed = function (s) { return s === '♥' || s === '♦'; };
-    var delayPerCard = 220;
-    if (phase === 'flop' && cards.length >= 3) {
-        var flopVariant = 'deal-flop-' + (1 + Math.floor(Math.random() * 6));
-        cards.slice(0, 3).forEach(function (c, i) {
-            var d = parseCardForDisplay(c);
-            setTimeout(function () {
-                var div = document.createElement('div');
-                div.className = 'card ' + (isRed(d.suit) ? 'red' : 'black') + ' deal-flop ' + flopVariant;
-                div.innerText = d.suit + d.rank;
-                container.appendChild(div);
-                setTimeout(function () { div.classList.add('visible'); }, 50);
-            }, i * delayPerCard);
-        });
-    } else if (phase === 'turn' && cards.length >= 1) {
-        var turnVariant = 'deal-turn-' + (1 + Math.floor(Math.random() * 6));
-        var d = parseCardForDisplay(cards[0]);
-        var div = document.createElement('div');
-        div.className = 'card ' + (isRed(d.suit) ? 'red' : 'black') + ' deal-turn ' + turnVariant;
-        div.innerText = d.suit + d.rank;
-        container.appendChild(div);
-        setTimeout(function () { div.classList.add('visible'); }, 50);
-    } else if (phase === 'river' && cards.length >= 1) {
-        var riverVariant = 'deal-river-' + (1 + Math.floor(Math.random() * 6));
-        var d = parseCardForDisplay(cards[0]);
-        var div = document.createElement('div');
-        div.className = 'card ' + (isRed(d.suit) ? 'red' : 'black') + ' deal-river ' + riverVariant;
-        div.innerText = d.suit + d.rank;
-        container.appendChild(div);
-        setTimeout(function () { div.classList.add('visible'); }, 50);
-    }
-}
-
 /**
  * 发牌阶段动画：根据 game:deal_phase 或 deal_next 返回的 phase/cards 播放对应动画。
  * 建议先播动画（每张 0.2–0.4s），随后 game:state_update 会更新牌面 DOM。
@@ -945,26 +1076,39 @@ function playDealPhaseAnimation(phase, cards) {
         for (var i = 0; i < 3; i++) {
             var c = cardToDisplay(cards[i]);
             var suitClass = isRed(c.suit) ? 'red' : 'black';
+            var variant = 1 + Math.floor(Math.random() * 9);
             var cardDiv = document.createElement('div');
-            cardDiv.className = 'card ' + suitClass + ' deal-flop';
+            cardDiv.className = 'card ' + suitClass + ' deal-flop deal-flop-' + variant;
             cardDiv.innerText = c.suit + c.rank;
             container.appendChild(cardDiv);
-            (function (el) {
-                setTimeout(function () { el.classList.add('visible'); }, 80 + i * delayMs);
-            })(cardDiv);
+            (function (el, idx) {
+                var delay = 120 + idx * delayMs;
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        void el.offsetHeight;
+                        setTimeout(function () { el.classList.add('visible'); }, delay);
+                    });
+                });
+            })(cardDiv, i);
         }
         return;
     }
 
     if ((phase === 'turn' || phase === 'river') && cards && cards.length >= 1) {
-        var dealClass = phase === 'turn' ? 'deal-turn' : 'deal-river';
+        var variant = 1 + Math.floor(Math.random() * 9);
+        var dealClass = phase === 'turn' ? ('deal-turn deal-turn-' + variant) : ('deal-river deal-river-' + variant);
         var c = cardToDisplay(cards[0]);
         var suitClass = isRed(c.suit) ? 'red' : 'black';
         var cardDiv = document.createElement('div');
         cardDiv.className = 'card ' + suitClass + ' ' + dealClass;
         cardDiv.innerText = c.suit + c.rank;
         container.appendChild(cardDiv);
-        setTimeout(function () { cardDiv.classList.add('visible'); }, 80);
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                void cardDiv.offsetHeight;
+                setTimeout(function () { cardDiv.classList.add('visible'); }, 120);
+            });
+        });
     }
 }
 
@@ -1042,19 +1186,30 @@ function animateCards(container, cards, stage) {
                 rank = '?';
             }
             const suitClass = isRed(suit) ? 'red' : 'black';
-            cardDiv.className = 'card ' + suitClass + ' ' + dealClass;
+            var variantNum = 1 + Math.floor(Math.random() * 9);
+            var variant = '';
+            if (dealClass === 'deal-flop') variant = ' deal-flop-' + variantNum;
+            else if (dealClass === 'deal-turn') variant = ' deal-turn-' + variantNum;
+            else if (dealClass === 'deal-river') variant = ' deal-river-' + variantNum;
+            cardDiv.className = 'card ' + suitClass + ' ' + dealClass + variant;
             cardDiv.innerText = suit + rank;
             container.appendChild(cardDiv);
-            setTimeout(function () { cardDiv.classList.add('visible'); }, 50);
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    void cardDiv.offsetHeight;
+                    setTimeout(function () { cardDiv.classList.add('visible'); }, 220);
+                });
+            });
         }, index * delayMs);
     });
 }
 
-function showWinnerAnimation(winnerInfo, winnerIdx, players, winnerAmount) {
+function showWinnerAnimation(winnerInfo, winnerIdx, players, winnerAmount, winnerHandType) {
     const overlay = document.getElementById('winner-overlay');
     const textEl = document.getElementById('winner-text');
     const amountEl = document.getElementById('winner-amount');
     const handTypeEl = document.getElementById('winner-hand-type');
+    const contentEl = overlay ? overlay.querySelector('.winner-content') : null;
     if (!overlay || !textEl) return;
     const winnerName = players && players[winnerIdx] ? players[winnerIdx].name : '';
     textEl.textContent = winnerName ? winnerName + ' 获胜！' : (winnerInfo || '比牌结束');
@@ -1067,30 +1222,39 @@ function showWinnerAnimation(winnerInfo, winnerIdx, players, winnerAmount) {
             amountEl.style.display = 'none';
         }
     }
-    if (handTypeEl && winnerInfo && typeof winnerInfo === 'string') {
-        var m = winnerInfo.match(/牌型[：:]\s*([^，。]+)/);
-        if (m) {
-            handTypeEl.textContent = m[1].trim();
+    if (handTypeEl) {
+        var handType = winnerHandType;
+        if (!handType && winnerInfo && typeof winnerInfo === 'string') {
+            var m = winnerInfo.match(/以\s*([^获]+)\s*获胜/);
+            if (m) handType = m[1].trim();
+            else { m = winnerInfo.match(/牌型[：:]\s*([^，。]+)/); if (m) handType = m[1].trim(); }
+        }
+        if (handType) {
+            handTypeEl.textContent = '以 ' + handType + ' 获胜';
             handTypeEl.style.display = 'block';
         } else {
             handTypeEl.textContent = '';
             handTypeEl.style.display = 'none';
         }
     }
+    if (contentEl) contentEl.classList.remove('winner-content--animate');
     overlay.classList.remove('hidden');
     overlay.setAttribute('aria-hidden', 'false');
     runConfetti();
     setTimeout(function () {
         overlay.classList.add('visible');
+        if (contentEl) contentEl.classList.add('winner-content--animate');
     }, 50);
+    /* 展示 3 秒，方便看清谁获胜 */
     setTimeout(function () {
         overlay.classList.remove('visible');
         setTimeout(function () {
             overlay.classList.add('hidden');
             overlay.setAttribute('aria-hidden', 'true');
+            if (contentEl) contentEl.classList.remove('winner-content--animate');
             stopConfetti();
         }, 600);
-    }, 4000);
+    }, 3000);
 }
 
 function hideWinnerOverlay() {

@@ -1,22 +1,27 @@
 {% extends "base.html" %}
 {% block title %}商城 · DZPoker{% endblock %}
 {% block content %}
-<h1 class="page-title">商城</h1>
-
-<div class="panel">
-    <h2>分类</h2>
-    <div class="mall-categories" id="mall-categories">
-        <button type="button" class="cat-btn active" data-cat="all">全部</button>
-        <button type="button" class="cat-btn" data-cat="table_theme">牌桌主题</button>
-        <button type="button" class="cat-btn" data-cat="card_back">卡牌背面</button>
-        <button type="button" class="cat-btn" data-cat="emote">表情包</button>
+<div class="mall-page">
+    <h1 class="page-title">商城</h1>
+    <figure class="page-ui-mockup" aria-label="商城界面示意">
+        <img src="/static/UI_pic/ui-mockup-mall.png" alt="商城界面示意" />
+        <figcaption>商城界面示意</figcaption>
+    </figure>
+    <div class="panel mall-panel">
+        <h2>分类</h2>
+        <div class="mall-categories" id="mall-categories">
+            <button type="button" class="cat-btn active" data-cat="all">全部</button>
+            <button type="button" class="cat-btn" data-cat="table_theme">牌桌主题</button>
+            <button type="button" class="cat-btn" data-cat="card_back">卡牌背面</button>
+            <button type="button" class="cat-btn" data-cat="emote">表情包</button>
+        </div>
     </div>
-</div>
 
-<div class="panel">
-    <h2>商品</h2>
-    <div class="product-grid" id="product-grid">
-        <!-- 由 JS 填充 -->
+    <div class="panel mall-panel">
+        <h2>商品</h2>
+        <div class="product-grid" id="product-grid">
+            <!-- 由 JS 填充 -->
+        </div>
     </div>
 </div>
 {% endblock %}

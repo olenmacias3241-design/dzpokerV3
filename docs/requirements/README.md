@@ -20,6 +20,7 @@
 | 11 | [11_club_design.md](11_club_design.md) | 俱乐部设计 |
 | 12 | [12_tournaments_sng_mtt.md](12_tournaments_sng_mtt.md) | 锦标赛 SNG/MTT |
 | 13 | [13_scheduled_game_mode.md](13_scheduled_game_mode.md) | 约局模式 |
+| 14 | [14_multi_ui_config.md](14_multi_ui_config.md) | 多 UI 版本配置（主题/版本/字体/动效/音效、存储与 API） |
 | — | [TURN_ORDER.md](TURN_ORDER.md) | 行动顺序补充 |
 
 ## 使用

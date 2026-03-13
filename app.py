@@ -3,6 +3,7 @@
 
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit, join_room
+from datetime import datetime
 
 import tables
 from database import SessionLocal
@@ -16,6 +17,18 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 def _is_api_request():
     return request.path.startswith("/api/")
+
+
+def _ensure_default_table():
+    """若没有任何牌桌则创建 1 号桌，避免直接访问 /?table=1 时 404。"""
+    if not tables.TABLES:
+        t = tables.create_table(db=None, table_name="牌桌 1", sb=5, bb=10, max_players=6)
+        print(f"[Startup] 已创建默认牌桌: {t['table_id']} ({t.get('table_name', '')})")
+
+
+@app.before_request
+def _before_request_ensure_table():
+    _ensure_default_table()
 
 
 @app.errorhandler(500)
@@ -46,6 +59,12 @@ def _game_state_for_seat(table_id, seat_index):
 @app.route("/ping")
 def ping():
     return "OK", 200, {"Content-Type": "text/plain"}
+
+
+@app.route("/favicon.ico")
+def favicon():
+    """避免浏览器请求 /favicon.ico 时返回 404。"""
+    return "", 204
 
 
 @app.route("/")
@@ -87,6 +106,11 @@ def register_page():
 @app.route("/profile")
 def profile_page():
     return render_template("profile.html")
+
+
+@app.route("/settings")
+def settings_page():
+    return render_template("settings.html")
 
 
 @app.route("/clubs")
@@ -184,6 +208,16 @@ def api_auth_me():
     user = tables.get_user(token)
     if not user:
         return jsonify({"ok": False, "message": "登录已失效"}), 401
+    # 游客 token：user_id 为字符串（如 guest_xxx），不查 DB，直接返回内存中的 profile
+    if not isinstance(user.get("user_id"), int):
+        return jsonify({
+            "ok": True,
+            "userProfile": {
+                "userId": user["user_id"],
+                "username": user.get("username") or "游客",
+                "coinsBalance": user.get("coinsBalance", user.get("stack", 0)),
+            }
+        })
     from services.auth import get_user_by_id, user_to_profile
     db = SessionLocal()
     try:
@@ -191,7 +225,7 @@ def api_auth_me():
     finally:
         db.close()
     if not db_user:
-        return jsonify({"ok": True, "userProfile": {"userId": user["user_id"], "username": user["username"], "coinsBalance": 0}})
+        return jsonify({"ok": True, "userProfile": {"userId": user["user_id"], "username": user.get("username"), "coinsBalance": 0}})
     return jsonify({"ok": True, "userProfile": user_to_profile(db_user)})
 
 
@@ -307,6 +341,310 @@ def api_tournament_unregister(tournament_id):
         db.close()
 
 
+# ---------- 约局（docs/requirements/13_scheduled_game_mode.md） ----------
+def _scheduled_user_id():
+    """从 JWT 或 token 解析出 DB user_id，用于约局接口。"""
+    token = _auth_token()
+    if not token:
+        return None, "未登录"
+    from services import auth
+    payload = auth.decode_jwt(token)
+    if payload and "user_id" in payload:
+        return int(payload["user_id"]), None
+    user = tables.get_user(token)
+    if user and isinstance(user.get("user_id"), int):
+        return user["user_id"], None
+    return None, "约局需使用账号登录"
+
+
+@app.route("/api/scheduled-games", methods=["GET"])
+def api_scheduled_games_list():
+    """约局列表；Query: clubId=, status=, mine=true"""
+    from services import scheduled_games
+    db = SessionLocal()
+    try:
+        started = scheduled_games.check_and_start_games(db)
+        for sg_id, table_id in started:
+            socketio.emit("scheduled:table_created", {"scheduledGameId": sg_id, "tableId": table_id}, room=f"scheduled_{sg_id}")
+        club_id = request.args.get("clubId", type=int)
+        status = request.args.get("status")
+        mine = request.args.get("mine", "").lower() in ("1", "true", "yes")
+        mine_user_id = None
+        if mine:
+            uid, err = _scheduled_user_id()
+            if err:
+                return jsonify({"error": err}), 401
+            mine_user_id = uid
+        limit = min(100, max(1, request.args.get("limit", type=int) or 50))
+        offset = max(0, request.args.get("offset", type=int) or 0)
+        lst = scheduled_games.list_games(db, club_id=club_id, status=status, mine_user_id=mine_user_id, limit=limit, offset=offset)
+        out = []
+        for sg in lst:
+            n = scheduled_games.count_players(db, sg.id)
+            sb, bb = scheduled_games._parse_blinds(sg.blinds_json)
+            out.append({
+                "scheduledGameId": sg.id,
+                "title": sg.title,
+                "hostUserId": sg.host_user_id,
+                "clubId": sg.club_id,
+                "startAt": sg.start_at.isoformat() if sg.start_at else None,
+                "startRule": sg.start_rule,
+                "minPlayers": sg.min_players,
+                "maxPlayers": sg.max_players,
+                "blindsDisplay": f"{sb}/{bb}",
+                "status": sg.status,
+                "registeredCount": n,
+                "tableId": sg.table_id,
+            })
+        return jsonify(out)
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games", methods=["POST"])
+def api_scheduled_games_create():
+    """创建约局"""
+    from services import scheduled_games
+    user_id, err = _scheduled_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        title = (data.get("title") or "").strip()
+        start_at_raw = data.get("startAt")
+        if not start_at_raw:
+            return jsonify({"error": "缺少 startAt"}), 400
+        try:
+            if hasattr(start_at_raw, "year"):
+                start_at = start_at_raw
+            else:
+                s = str(start_at_raw).strip().replace("Z", "+00:00")
+                start_at = datetime.fromisoformat(s)
+        except (ValueError, TypeError):
+            return jsonify({"error": "startAt 格式无效，请使用 ISO 格式如 2026-03-15T21:00:00"}), 400
+        min_players = int(data.get("minPlayers", 2))
+        max_players = int(data.get("maxPlayers", 6))
+        blinds = data.get("blinds")
+        if blinds is None:
+            blinds = "5/10"
+        elif isinstance(blinds, dict):
+            pass
+        else:
+            blinds = str(blinds)
+        sg, err = scheduled_games.create(
+            db, user_id, title, start_at, min_players, max_players, blinds,
+            start_rule=data.get("startRule"),
+            club_id=data.get("clubId"),
+            buy_in_min=data.get("buyInMin"),
+            buy_in_max=data.get("buyInMax"),
+            initial_chips=data.get("initialChips"),
+            password=data.get("password"),
+        )
+        if err:
+            return jsonify({"error": err}), 400
+        detail = scheduled_games.to_detail(db, sg, request.host_url or "")
+        return jsonify(detail)
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games/<int:scheduled_game_id>")
+def api_scheduled_game_detail(scheduled_game_id):
+    """约局详情（含参与名单、倒计时）；会触发开赛检查"""
+    from services import scheduled_games
+    db = SessionLocal()
+    try:
+        started = scheduled_games.check_and_start_games(db)
+        for sg_id, table_id in started:
+            socketio.emit("scheduled:table_created", {"scheduledGameId": sg_id, "tableId": table_id}, room=f"scheduled_{sg_id}")
+        sg = scheduled_games.get(db, scheduled_game_id)
+        if not sg:
+            return jsonify({"error": "约局不存在"}), 404
+        base = request.host_url or ""
+        return jsonify(scheduled_games.to_detail(db, sg, base))
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games/<int:scheduled_game_id>", methods=["PUT"])
+def api_scheduled_game_update(scheduled_game_id):
+    """编辑约局（仅局主，Scheduled）"""
+    from services import scheduled_games
+    user_id, err = _scheduled_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        kwargs = {}
+        if "title" in data:
+            kwargs["title"] = (data.get("title") or "").strip()
+        if "startAt" in data:
+            try:
+                v = data["startAt"]
+                if hasattr(v, "year"):
+                    kwargs["start_at"] = v
+                else:
+                    s = str(v).strip().replace("Z", "+00:00")
+                    kwargs["start_at"] = datetime.fromisoformat(s)
+            except (ValueError, TypeError):
+                return jsonify({"error": "startAt 格式无效"}), 400
+        if "minPlayers" in data:
+            kwargs["min_players"] = int(data["minPlayers"])
+        if "maxPlayers" in data:
+            kwargs["max_players"] = int(data["maxPlayers"])
+        if "blinds" in data:
+            kwargs["blinds"] = data["blinds"]
+        ok, err = scheduled_games.update(db, scheduled_game_id, user_id, **kwargs)
+        if not ok:
+            return jsonify({"error": err}), 400
+        sg = scheduled_games.get(db, scheduled_game_id)
+        socketio.emit("scheduled:updated", scheduled_games.to_detail(db, sg, request.host_url or ""), room=f"scheduled_{scheduled_game_id}")
+        return jsonify(scheduled_games.to_detail(db, sg, request.host_url or ""))
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games/<int:scheduled_game_id>", methods=["DELETE"])
+def api_scheduled_game_cancel(scheduled_game_id):
+    """取消约局（仅局主）"""
+    from services import scheduled_games
+    user_id, err = _scheduled_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        ok, err = scheduled_games.cancel(db, scheduled_game_id, user_id)
+        if not ok:
+            return jsonify({"error": err}), 400
+        socketio.emit("scheduled:cancelled", {"scheduledGameId": scheduled_game_id}, room=f"scheduled_{scheduled_game_id}")
+        return jsonify({"ok": True})
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games/<int:scheduled_game_id>/register", methods=["POST"])
+def api_scheduled_game_register(scheduled_game_id):
+    """报名"""
+    from services import scheduled_games
+    user_id, err = _scheduled_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        data = request.get_json() or {}
+        ok, err = scheduled_games.register(db, scheduled_game_id, user_id, password=data.get("password"))
+        if not ok:
+            return jsonify({"error": err}), 400
+        sg = scheduled_games.get(db, scheduled_game_id)
+        socketio.emit("scheduled:updated", scheduled_games.to_detail(db, sg, request.host_url or ""), room=f"scheduled_{scheduled_game_id}")
+        return jsonify(scheduled_games.to_detail(db, sg, request.host_url or ""))
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games/<int:scheduled_game_id>/unregister", methods=["POST"])
+def api_scheduled_game_unregister(scheduled_game_id):
+    """取消报名"""
+    from services import scheduled_games
+    user_id, err = _scheduled_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        ok, err = scheduled_games.unregister(db, scheduled_game_id, user_id)
+        if not ok:
+            return jsonify({"error": err}), 400
+        sg = scheduled_games.get(db, scheduled_game_id)
+        socketio.emit("scheduled:updated", scheduled_games.to_detail(db, sg, request.host_url or ""), room=f"scheduled_{scheduled_game_id}")
+        return jsonify({"ok": True})
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games/<int:scheduled_game_id>/players")
+def api_scheduled_game_players(scheduled_game_id):
+    """参与名单"""
+    from services import scheduled_games
+    db = SessionLocal()
+    try:
+        sg = scheduled_games.get(db, scheduled_game_id)
+        if not sg:
+            return jsonify({"error": "约局不存在"}), 404
+        return jsonify({"players": scheduled_games.get_players(db, scheduled_game_id, sg.host_user_id)})
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games/<int:scheduled_game_id>/players/<int:user_id>/kick", methods=["POST"])
+def api_scheduled_game_kick(scheduled_game_id, user_id):
+    """踢出（仅局主）"""
+    from services import scheduled_games
+    operator_id, err = _scheduled_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        ok, err = scheduled_games.kick(db, scheduled_game_id, operator_id, user_id)
+        if not ok:
+            return jsonify({"error": err}), 400
+        sg = scheduled_games.get(db, scheduled_game_id)
+        socketio.emit("scheduled:updated", scheduled_games.to_detail(db, sg, request.host_url or ""), room=f"scheduled_{scheduled_game_id}")
+        return jsonify({"ok": True})
+    finally:
+        db.close()
+
+
+@app.route("/api/scheduled-games/<int:scheduled_game_id>/invite-link")
+def api_scheduled_game_invite_link(scheduled_game_id):
+    """获取邀请链接"""
+    from services import scheduled_games
+    user_id, err = _scheduled_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        sg = scheduled_games.get(db, scheduled_game_id)
+        if not sg:
+            return jsonify({"error": "约局不存在"}), 404
+        return jsonify(scheduled_games.get_invite_link(sg, request.host_url or ""))
+    finally:
+        db.close()
+
+
+@app.route("/api/clubs/<int:club_id>/scheduled-games")
+def api_club_scheduled_games(club_id):
+    """俱乐部下约局列表"""
+    from services import scheduled_games
+    db = SessionLocal()
+    try:
+        started = scheduled_games.check_and_start_games(db)
+        for sg_id, table_id in started:
+            socketio.emit("scheduled:table_created", {"scheduledGameId": sg_id, "tableId": table_id}, room=f"scheduled_{sg_id}")
+        lst = scheduled_games.list_games(db, club_id=club_id, limit=50)
+        out = []
+        for sg in lst:
+            n = scheduled_games.count_players(db, sg.id)
+            sb, bb = scheduled_games._parse_blinds(sg.blinds_json)
+            out.append({
+                "scheduledGameId": sg.id,
+                "title": sg.title,
+                "hostUserId": sg.host_user_id,
+                "startAt": sg.start_at.isoformat() if sg.start_at else None,
+                "startRule": sg.start_rule,
+                "minPlayers": sg.min_players,
+                "maxPlayers": sg.max_players,
+                "blindsDisplay": f"{sb}/{bb}",
+                "status": sg.status,
+                "registeredCount": n,
+                "tableId": sg.table_id,
+            })
+        return jsonify(out)
+    finally:
+        db.close()
+
+
 # ---------- 大厅 ----------
 @app.route("/api/lobby/tables")
 def api_lobby_tables():
@@ -369,6 +707,8 @@ def api_lobby_quick_start():
 @app.route("/api/tables/<int:table_id>")
 def api_table_state(table_id):
     token = request.headers.get("Authorization", "").replace("Bearer ", "").strip() or request.args.get("token", "")
+    if not token:
+        return jsonify({"error": "请提供 token"}), 404
     state, err = tables.get_table_state(table_id, token)
     if err:
         return jsonify({"error": err}), 404
@@ -391,9 +731,9 @@ def api_table_sit(table_id):
         if not ok:
             return jsonify({"error": msg}), 400
 
-        # 玩家入座后自动让机器人填满剩余座位并开局（延迟 1 秒后执行）
+        # 玩家入座后自动让机器人填满剩余座位并开局（延迟 0.5 秒后执行，避免线程未跑）
         import bots
-        bots.fill_table_with_bots(table_id, delay=1.0)
+        bots.fill_table_with_bots(table_id, delay=0.5)
 
         return jsonify({"tableId": table_id, "seatNumber": seat})
     except Exception as err:
@@ -429,6 +769,13 @@ def api_table_start(table_id):
         ok, msg = tables.start_game(db, table_id, token)
         
         if not ok:
+            # 已在进行中时视为幂等，返回 200 与当前状态
+            t = tables.TABLES.get(table_id)
+            if t and t.get("status") == "playing" and msg and ("已在进行中" in msg or "already" in msg.lower()):
+                state, _ = tables.get_table_state(table_id, token)
+                if state and state.get("status") == "playing" and tables.TABLES.get(table_id, {}).get("game"):
+                    state["game_state"] = _game_state_for_seat(table_id, state.get("my_seat", -1))
+                return jsonify(state or {"status": "playing", "tableId": table_id})
             db.rollback()
             return jsonify({"error": msg}), 400
             
@@ -585,6 +932,36 @@ def api_add_bot(table_id):
     return jsonify({"added": added, "table": state})
 
 
+@app.route("/api/tables/<int:table_id>/fill_bots", methods=["POST", "GET"])
+def api_fill_bots(table_id):
+    """手动触发：同步填满机器人并开局（等待中且已有人入座时可用）。"""
+    import bots
+    t = tables.TABLES.get(table_id)
+    if not t:
+        return jsonify({"error": "牌桌不存在"}), 404
+    if t.get("status") != "waiting":
+        return jsonify({"error": "仅等待中可拉机器人", "status": t.get("status")}), 400
+    seated = sum(1 for s in t["seats"] if s is not None)
+    if seated < 1:
+        return jsonify({"error": "请先入座再拉机器人"}), 400
+    # 同步执行：直接填满空位并开局，不经过延迟线程
+    empty = [i for i, s in enumerate(t["seats"]) if s is None]
+    if empty:
+        added, err = bots.add_bots_to_table(table_id, count=len(empty), auto_start=False)
+        if err:
+            return jsonify({"error": err}), 400
+    t = tables.TABLES.get(table_id)
+    seated = sum(1 for s in t["seats"] if s is not None) if t else 0
+    if t and seated >= 2:
+        ok, msg = tables.start_game(None, table_id, "")
+        if not ok:
+            return jsonify({"error": msg or "开局失败"}), 400
+    state = tables.get_table_state_public(table_id)
+    if state:
+        socketio.emit("table:state", state, room=str(table_id))
+    return jsonify({"ok": True, "message": "已填满机器人并开局", "table": state})
+
+
 @app.route("/api/mall/products")
 def api_mall_products():
     return jsonify({"products": [
@@ -688,6 +1065,17 @@ def ws_disconnect():
         state = tables.get_table_state_public(table_id)
         if state:
             emit("table:state", state, room=str(table_id))
+
+
+@socketio.on("join_scheduled_game")
+def ws_join_scheduled_game(data):
+    """加入约局房间，接收 scheduled:updated / scheduled:table_created / scheduled:cancelled"""
+    sg_id = data.get("scheduled_game_id") or data.get("scheduledGameId")
+    if sg_id is None:
+        emit("error", {"message": "缺少 scheduled_game_id"})
+        return
+    join_room(f"scheduled_{sg_id}")
+    emit("ok", {"room": f"scheduled_{sg_id}"})
 
 
 @socketio.on("join_table")
@@ -923,7 +1311,15 @@ def api_replay_hand_detail(hand_id):
         db.close()
 
 
+def _ensure_default_table():
+    """启动时若没有任何牌桌，则创建 1 号桌，避免直接访问 /?table=1 时 404。"""
+    if not tables.TABLES:
+        t = tables.create_table(db=None, table_name="牌桌 1", sb=5, bb=10, max_players=6)
+        print(f"[Startup] 已创建默认牌桌: {t['table_id']} ({t.get('table_name', '')})")
+
+
 if __name__ == "__main__":
+    _ensure_default_table()
     # 启动机器人后台线程
     import bots
     bots.start(socketio)

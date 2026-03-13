@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}注册 · DZPoker{% endblock %}
 {% block content %}
+<div class="auth-page-with-mockup">
 <div class="auth-box panel">
     <h1>注册</h1>
     <form id="register-form">
@@ -24,6 +25,11 @@
     <div class="auth-footer">
         已有账号？<a href="/login">去登录</a>
     </div>
+</div>
+<figure class="page-ui-mockup" aria-label="注册页界面示意">
+    <img src="/static/UI_pic/ui-mockup-register.png" alt="注册页界面示意" />
+    <figcaption>注册页示意</figcaption>
+</figure>
 </div>
 {% endblock %}
 {% block scripts %}

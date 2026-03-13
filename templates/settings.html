@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}外观设置 · DZPoker{% endblock %}
+{% block content %}
+<div class="settings-page">
+    <h1 class="page-title">外观设置</h1>
+    <p class="settings-desc">修改后即时生效，无需刷新。已登录时设置会同步到账号。</p>
+    <figure class="page-ui-mockup" aria-label="设置页界面示意">
+        <img src="/static/UI_pic/ui-mockup-settings.png" alt="设置页界面示意" />
+        <figcaption>设置页示意</figcaption>
+    </figure>
+    <section class="settings-section" id="skins">
+        <h2 class="settings-section-title">界面风格（10 套可替换）</h2>
+        <p class="settings-desc settings-desc--skin">选择一套整体配色与牌桌风格，即时生效。下方为当前选中风格的牌桌预览。</p>
+        <div class="skin-preview-panel" id="skin-preview-panel" data-preview-skin="classic" aria-label="当前风格牌桌预览">
+            <div class="skin-preview-room">
+                <div class="skin-preview-table">
+                    <div class="skin-preview-community">
+                        <span class="skin-preview-card"></span>
+                        <span class="skin-preview-card"></span>
+                        <span class="skin-preview-card"></span>
+                    </div>
+                    <div class="skin-preview-pot">主池 1,200</div>
+                    <div class="skin-preview-seats">
+                        <div class="skin-preview-seat"><span class="skin-preview-avatar">A</span><span class="skin-preview-chips">2.5k</span></div>
+                        <div class="skin-preview-seat skin-preview-seat--empty">空</div>
+                        <div class="skin-preview-seat"><span class="skin-preview-avatar">B</span><span class="skin-preview-chips">1.8k</span></div>
+                    </div>
+                </div>
+                <div class="skin-preview-actions">
+                    <span class="skin-preview-btn skin-preview-btn--fold">弃牌</span>
+                    <span class="skin-preview-btn skin-preview-btn--accent">跟注 200</span>
+                </div>
+            </div>
+        </div>
+        <div class="skin-grid" id="skin-grid" role="radiogroup" aria-label="界面风格">
+            <label class="skin-option" data-skin="classic"><span class="skin-swatch"></span><input type="radio" name="skin" value="classic"> <span>经典绿金</span></label>
+            <label class="skin-option" data-skin="blue-casino"><span class="skin-swatch"></span><input type="radio" name="skin" value="blue-casino"> <span>深蓝赌场</span></label>
+            <label class="skin-option" data-skin="burgundy-velvet"><span class="skin-swatch"></span><input type="radio" name="skin" value="burgundy-velvet"> <span>酒红丝绒</span></label>
+            <label class="skin-option" data-skin="midnight-black-gold"><span class="skin-swatch"></span><input type="radio" name="skin" value="midnight-black-gold"> <span>午夜黑金</span></label>
+            <label class="skin-option" data-skin="forest-green"><span class="skin-swatch"></span><input type="radio" name="skin" value="forest-green"> <span>森林绿</span></label>
+            <label class="skin-option" data-skin="violet-vip"><span class="skin-swatch"></span><input type="radio" name="skin" value="violet-vip"> <span>紫罗兰 VIP</span></label>
+            <label class="skin-option" data-skin="warm-lamp"><span class="skin-swatch"></span><input type="radio" name="skin" value="warm-lamp"> <span>暖黄灯光</span></label>
+            <label class="skin-option" data-skin="high-contrast-arena"><span class="skin-swatch"></span><input type="radio" name="skin" value="high-contrast-arena"> <span>高对比竞技</span></label>
+            <label class="skin-option" data-skin="light-minimal"><span class="skin-swatch"></span><input type="radio" name="skin" value="light-minimal"> <span>极简浅色</span></label>
+            <label class="skin-option" data-skin="cyber-neon"><span class="skin-swatch"></span><input type="radio" name="skin" value="cyber-neon"> <span>赛博霓虹</span></label>
+        </div>
+    </section>
+
+    <section class="settings-section" id="appearance">
+        <h2 class="settings-section-title">主题与界面</h2>
+
+        <div class="settings-group">
+            <label class="settings-label">主题</label>
+            <div class="settings-options settings-options--theme" role="radiogroup" aria-label="主题">
+                <label class="settings-radio">
+                    <input type="radio" name="theme" value="light"> 浅色
+                </label>
+                <label class="settings-radio">
+                    <input type="radio" name="theme" value="dark"> 深色
+                </label>
+                <label class="settings-radio">
+                    <input type="radio" name="theme" value="system"> 跟随系统
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <label class="settings-label">UI 版本</label>
+            <div class="settings-options" role="radiogroup" aria-label="UI 版本">
+                <label class="settings-radio">
+                    <input type="radio" name="uiVersion" value="default"> 默认（完整动效）
+                </label>
+                <label class="settings-radio">
+                    <input type="radio" name="uiVersion" value="compact"> 简约
+                </label>
+                <label class="settings-radio">
+                    <input type="radio" name="uiVersion" value="classic"> 经典
+                </label>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <label class="settings-label">字体大小</label>
+            <div class="settings-options" role="radiogroup" aria-label="字体大小">
+                <label class="settings-radio">
+                    <input type="radio" name="fontSize" value="small"> 小
+                </label>
+                <label class="settings-radio">
+                    <input type="radio" name="fontSize" value="medium"> 中
+                </label>
+                <label class="settings-radio">
+                    <input type="radio" name="fontSize" value="large"> 大
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <section class="settings-section">
+        <h2 class="settings-section-title">动效与音效</h2>
+
+        <div class="settings-group settings-group--switch">
+            <label class="settings-label">开启动画</label>
+            <label class="settings-switch">
+                <input type="checkbox" id="setting-animation" checked>
+                <span class="settings-switch-slider"></span>
+            </label>
+        </div>
+        <div class="settings-group settings-group--switch">
+            <label class="settings-label">开启音效</label>
+            <label class="settings-switch">
+                <input type="checkbox" id="setting-sound" checked>
+                <span class="settings-switch-slider"></span>
+            </label>
+        </div>
+        <div class="settings-group settings-group--switch">
+            <label class="settings-label">减弱动效（无障碍）</label>
+            <label class="settings-switch">
+                <input type="checkbox" id="setting-reduced-motion">
+                <span class="settings-switch-slider"></span>
+            </label>
+        </div>
+    </section>
+
+    <p class="settings-hint">通过 URL 参数可临时覆盖（仅当次生效），例如：<code>/lobby?theme=dark&ui=compact</code></p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+    var cfg = window.DZPokerUIConfig;
+    if (!cfg) return;
+
+    function bindRadio(name, key) {
+        document.querySelectorAll('input[name="' + name + '"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                cfg.set({ [key]: this.value }, { syncToServer: true });
+            });
+        });
+    }
+    function bindCheckbox(id, key) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', function() {
+            cfg.set({ [key]: this.checked }, { syncToServer: true });
+        });
+    }
+
+    function refreshUI() {
+        var c = cfg.get();
+        document.querySelectorAll('input[name="theme"]').forEach(function(r) { r.checked = r.value === (c.theme || 'system'); });
+        document.querySelectorAll('input[name="uiVersion"]').forEach(function(r) { r.checked = r.value === (c.uiVersion || 'default'); });
+        document.querySelectorAll('input[name="fontSize"]').forEach(function(r) { r.checked = r.value === (c.fontSize || 'medium'); });
+        var skin = c.skin || 'classic';
+        document.querySelectorAll('input[name="skin"]').forEach(function(r) { r.checked = r.value === skin; });
+        var panel = document.getElementById('skin-preview-panel');
+        if (panel) panel.setAttribute('data-preview-skin', skin);
+        var anim = document.getElementById('setting-animation');
+        var sound = document.getElementById('setting-sound');
+        var reduced = document.getElementById('setting-reduced-motion');
+        if (anim) anim.checked = !!c.animationEnabled;
+        if (sound) sound.checked = !!c.soundEnabled;
+        if (reduced) reduced.checked = !!c.reducedMotion;
+    }
+
+    cfg.onChange = refreshUI;
+    refreshUI();
+    bindRadio('theme', 'theme');
+    bindRadio('uiVersion', 'uiVersion');
+    bindRadio('fontSize', 'fontSize');
+    bindRadio('skin', 'skin');
+    bindCheckbox('setting-animation', 'animationEnabled');
+    bindCheckbox('setting-sound', 'soundEnabled');
+    bindCheckbox('setting-reduced-motion', 'reducedMotion');
+
+    var panel = document.getElementById('skin-preview-panel');
+    document.querySelectorAll('.skin-option').forEach(function(label) {
+        var skinId = label.getAttribute('data-skin');
+        if (!skinId || !panel) return;
+        label.addEventListener('mouseenter', function() { panel.setAttribute('data-preview-skin', skinId); });
+        label.addEventListener('mouseleave', function() {
+            var s = cfg.get().skin || 'classic';
+            panel.setAttribute('data-preview-skin', s);
+        });
+    });
+})();
+</script>
+{% endblock %}

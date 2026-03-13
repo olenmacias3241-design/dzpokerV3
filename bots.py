@@ -15,9 +15,11 @@ from core.game_logic import GameStage
 
 _socketio = None
 _lock = threading.Lock()
+# 全局串行：同一时刻只允许一个机器人行动（含思考时间），保证按次序下注
+_bot_action_lock = threading.Lock()
 
-BOT_THINK_MIN = 1.2   # 机器人最短思考时间（秒），避免太快
-BOT_THINK_MAX = 3.5   # 机器人最长思考时间（秒）
+BOT_THINK_MIN = 4.0   # 每个机器人随机 4～6 秒，不统一
+BOT_THINK_MAX = 6.0
 NEW_ROUND_DELAY = 3.0 # 新一局开始前的等待时间（秒）
 
 
@@ -44,14 +46,26 @@ def _create_bot(name):
     return token, uid
 
 
+# 随机名字池（扑克室风格，避免「机器人X号」）
+_BOT_NAME_POOL = [
+    "德州老王", "梭哈小王子", "冷静的鱼", "河杀王", "翻牌怪", "跟注侠", "弃牌流", "慢打帝",
+    "all-in怪", "老炮儿", "鲨鱼哥", "狐狸精", "稳如狗", "浪子阿杰", "神抽王", "鬼手",
+    "大刘", "阿King", "小陈", "牌桌老K", "底池猎人", "Bluff大师", "紧凶流", "松浪流",
+    "筹码收割机", "翻牌前弃", "河牌成牌", "听牌不信邪", "偷盲专业户", "价值下注怪",
+    "红桃A", "黑桃K", "方片Q", "梅花J", "桌上传说", "深夜牌手", "周末战士", "咖啡续杯",
+    "不弃牌", "慢打王", "推all-in", "跟到底", "偷鸡达人", "坚果成牌", "空气 bluff",
+]
+
 def _unique_bot_name():
     existing = {u["username"] for u in tables._tokens.values() if u.get("is_bot")}
-    i = 1
-    while True:
-        name = f"机器人{i}号"
+    for _ in range(100):
+        name = random.choice(_BOT_NAME_POOL)
         if name not in existing:
             return name
-        i += 1
+        name = name + str(random.randint(2, 99))
+        if name not in existing:
+            return name
+    return "玩家" + str(random.randint(1000, 9999))
 
 
 # ──────────────────────────────────────────────
@@ -75,9 +89,10 @@ def _decide(game_state):
     call_amount = max(0, atc - bet_this_round)
     effective_call = min(call_amount, stack)
 
+    # 无人下注时：提高下注概率，避免全都过牌「一起过」
     if atc == 0:
         r = random.random()
-        if r < 0.45:
+        if r < 0.35:
             action, amount = "check", 0
         elif r < 0.75:
             bet_size = max(bb, int(pot * random.uniform(0.5, 1.0)))
@@ -90,6 +105,7 @@ def _decide(game_state):
     else:
         if stack <= 0:
             return "check", 0
+        # 后端 RAISE 的 amount = 加注增量（非总投入），total_to_put = amount_to_call + amount
         call_ratio = effective_call / stack if stack else 0
         r = random.random()
         if call_ratio >= 0.8:
@@ -104,21 +120,32 @@ def _decide(game_state):
         elif call_ratio >= 0.2:
             if r < 0.30:
                 action, amount = "fold", 0
-            elif r < 0.65:
+            elif r < 0.60:
                 action, amount = "call", 0
             elif r < 0.85:
-                raise_to = min(stack, effective_call + int(pot * random.uniform(0.4, 0.8)))
-                action, amount = "raise", raise_to
+                # 加注增量 >= min_raise，且 total_to_put <= stack => amount <= stack - amount_to_call
+                raise_increment = max(min_raise, int(pot * random.uniform(0.4, 0.8)))
+                max_increment = max(0, stack - atc)
+                raise_increment = min(raise_increment, max_increment)
+                if raise_increment >= min_raise:
+                    action, amount = "raise", raise_increment
+                else:
+                    action, amount = "call", 0
             else:
                 action, amount = "all_in", 0
         else:
             if r < 0.15:
                 action, amount = "fold", 0
-            elif r < 0.55:
+            elif r < 0.50:
                 action, amount = "call", 0
             elif r < 0.80:
-                raise_to = min(stack, effective_call + max(min_raise, int(pot * random.uniform(0.3, 0.6))))
-                action, amount = "raise", raise_to
+                raise_increment = max(min_raise, int(pot * random.uniform(0.3, 0.6)))
+                max_increment = max(0, stack - atc)
+                raise_increment = min(raise_increment, max_increment)
+                if raise_increment >= min_raise:
+                    action, amount = "raise", raise_increment
+                else:
+                    action, amount = "call", 0
             else:
                 action, amount = "all_in", 0
 
@@ -127,15 +154,7 @@ def _decide(game_state):
 
 
 def _think_time_for_action(action, amount):
-    """根据行动类型返回思考时间（秒）：弃牌/过牌较短，加注/All-in 较长。"""
-    if action in ("fold", "check"):
-        return random.uniform(1.0, 2.0)
-    if action == "call":
-        return random.uniform(1.5, 2.8)
-    if action in ("bet", "raise"):
-        return random.uniform(2.0, 3.5)
-    if action == "all_in":
-        return random.uniform(2.2, 3.8)
+    """返回机器人下注前思考时间（秒），统一为 5～10 秒，避免一下过了。"""
     return random.uniform(BOT_THINK_MIN, BOT_THINK_MAX)
 
 
@@ -214,61 +233,63 @@ def _bot_loop():
                 if seat is None:
                     continue
 
-                # 获取机器人信息
-                bot_name = tables._tokens.get(
-                    next((tok for tok, u in tables._tokens.items() if u["user_id"] == current_pid), ""),
-                    {}
-                ).get("username", current_pid)
-                
-                print(f"[Bot] 牌桌 {tid}, 座位 {seat}, {bot_name} 开始思考...")
-
-                # 先做决策，再按决策类型模拟思考时间（不能太快）
-                with _lock:
+                # 全局串行：同一时刻只允许一个机器人行动（含思考时间），保证按次序
+                with _bot_action_lock:
+                    gs = wrapper.state
                     if gs.get("current_player_id") != current_pid:
                         continue
-                    action, amount = _decide(gs)
-                think_time = _think_time_for_action(action, amount)
-                time.sleep(think_time)
-
-                with _lock:
-                    # 再次确认还轮到该机器人（避免在睡眠期间状态已改变）
-                    if gs.get("current_player_id") != current_pid:
-                        print(f"[Bot] {bot_name} 思考期间状态已改变，跳过")
-                        continue
-                    print(f"[Bot] 牌桌 {tid}, {bot_name} 执行: {action} {amount}")
-                    
-                    from database import SessionLocal
-                    db = SessionLocal()
-                    try:
-                        ok, err = tables.process_action(db, tid, seat, action, amount)
-                        if ok:
-                            db.commit()
-                            print(f"[Bot] {bot_name} 行动成功: {action} {amount}")
-                        else:
-                            db.rollback()
-                            print(f"[Bot] {bot_name} 行动失败: {err}, 尝试兜底策略")
-                            # 兜底：能过牌就过牌，否则跟注
-                            fallback = "check" if gs.get("amount_to_call", 0) == 0 else "call"
-                            ok2, err2 = tables.process_action(db, tid, seat, fallback, 0)
-                            if ok2:
+                    bot_name = tables._tokens.get(
+                        next((tok for tok, u in tables._tokens.items() if u["user_id"] == current_pid), ""),
+                        {}
+                    ).get("username", current_pid)
+                    print(f"[Bot] 牌桌 {tid}, 座位 {seat}, {bot_name} 开始思考...")
+                    with _lock:
+                        if gs.get("current_player_id") != current_pid:
+                            continue
+                        action, amount = _decide(gs)
+                    think_time = _think_time_for_action(action, amount)
+                    time.sleep(think_time)
+                    with _lock:
+                        if wrapper.state.get("current_player_id") != current_pid:
+                            print(f"[Bot] {bot_name} 思考期间状态已改变，跳过")
+                            continue
+                        gs = wrapper.state
+                        print(f"[Bot] 牌桌 {tid}, {bot_name} 执行: {action} {amount}")
+                        from database import SessionLocal
+                        db = SessionLocal()
+                        try:
+                            amt_int = int(amount) if isinstance(amount, (int, float)) else 0
+                            ok, err = tables.process_action(db, tid, seat, action, amt_int)
+                            if ok:
                                 db.commit()
-                                print(f"[Bot] {bot_name} 兜底成功: {fallback}")
+                                print(f"[Bot] {bot_name} 行动成功: {action} {amount}")
                             else:
                                 db.rollback()
-                                print(f"[Bot] {bot_name} 兜底也失败: {err2}")
-                    except Exception as e:
-                        try:
-                            db.rollback()
-                        except Exception:
-                            pass
-                        print(f"[Bot] process_action db error: {e}")
-                    finally:
-                        try:
-                            db.close()
-                        except Exception:
-                            pass
-
-                _broadcast(tid)
+                                print(f"[Bot] {bot_name} 行动失败: {err}, 尝试兜底策略")
+                                fallback = "check" if gs.get("amount_to_call", 0) == 0 else "call"
+                                ok2, err2 = tables.process_action(db, tid, seat, fallback, 0)
+                                if ok2:
+                                    db.commit()
+                                    print(f"[Bot] {bot_name} 兜底成功: {fallback}")
+                                else:
+                                    db.rollback()
+                                    print(f"[Bot] {bot_name} 兜底也失败: {err2}")
+                        except Exception as e:
+                            try:
+                                db.rollback()
+                            except Exception:
+                                pass
+                            print(f"[Bot] process_action db error: {e}")
+                        finally:
+                            try:
+                                db.close()
+                            except Exception:
+                                pass
+                    _broadcast(tid)
+                    # 给前端一点时间收到 state 再继续下一轮，避免「一起过」的错觉
+                    time.sleep(0.4)
+                    # 每轮只处理一个机器人，下一轮再轮询，避免多人「一起过」
+                    break
 
         except Exception as e:
             print(f"[Bot] loop error: {e}")
@@ -294,6 +315,13 @@ def add_bots_to_table(table_id, count=1, auto_start=False):
         return [], "游戏已在进行中"
 
     added = []
+    db = None
+    try:
+        from database import SessionLocal
+        db = SessionLocal()
+    except Exception:
+        pass
+
     for _ in range(count):
         empty_seats = [i for i, uid in enumerate(t["seats"]) if uid is None]
         if not empty_seats:
@@ -301,12 +329,19 @@ def add_bots_to_table(table_id, count=1, auto_start=False):
         name = _unique_bot_name()
         tok, uid = _create_bot(name)
         seat_idx = empty_seats[0]
-        ok, err = tables.sit(table_id, tok, seat_idx, auto_start=False)
+        # 与 API 一致：sit(db, table_id, token, seat)，无 db 时传 None
+        ok, err = tables.sit(db if db else None, table_id, tok, seat_idx, auto_start=False)
         if ok:
             added.append({"name": name, "seat": seat_idx})
+            print(f"[Bot] add_bots_to_table: {name} 入座成功 seat={seat_idx}")
         else:
             tables._tokens.pop(tok, None)
-            print(f"[Bot] add_bots_to_table: 入座失败 seat={seat_idx} err={err}")
+            print(f"[Bot] add_bots_to_table: 入座失败 seat={seat_idx} name={name} err={err}")
+    if db:
+        try:
+            db.close()
+        except Exception:
+            pass
 
     if auto_start:
         seated = sum(1 for s in t["seats"] if s is not None)
@@ -340,6 +375,7 @@ def fill_table_with_bots(table_id, delay=2.0):
     def _do():
         time.sleep(delay)
         try:
+            print(f"[Bot] fill_table_with_bots: 开始执行 牌桌 {table_id}")
             t = tables.TABLES.get(table_id)
             if not t:
                 print(f"[Bot] fill_table_with_bots: 牌桌 {table_id} 不存在")

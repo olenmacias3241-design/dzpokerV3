@@ -45,16 +45,28 @@
         fetch(url, {
             headers: { 'Authorization': 'Bearer ' + token }
         })
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            if (r.status === 401 || r.status === 500) {
+                setToken('');
+                showGuest();
+                return null;
+            }
+            return r.json();
+        })
         .then(function(data) {
+            if (data == null) return;
             if (data.ok && data.userProfile) {
                 showUser(data.userProfile);
+                if (window.DZPokerUIConfig && window.DZPokerUIConfig.init) {
+                    window.DZPokerUIConfig.init({ fetchServer: true });
+                }
             } else {
                 setToken('');
                 showGuest();
             }
         })
         .catch(function() {
+            setToken('');
             showGuest();
         });
     }

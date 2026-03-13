@@ -32,6 +32,15 @@
 #    - dealer_pos=0 → SB=座位1, BB=座位0 → 先行动=SB(座位1)，后行动=BB(座位0)。
 # 示例（3 人）
 #    - dealer_pos=0 → SB=1, BB=2 → 先行动=座位0(UTG)，然后座位1(SB)，最后座位2(BB)。
+#
+# 7. 金额语义（每轮下注的明确数额）
+#    - amount_to_call：本街当前「最高下注额」，所有人需跟到此额才能继续。
+#    - 每位玩家 bet_this_round：本街该玩家已投入的金额。
+#    - 当前玩家「跟注需再放」= amount_to_call - 该玩家 bet_this_round。
+#    - last_raise_amount：本街上一次加注的「增量」，最小加注 = max(last_raise_amount, bb)。
+#    - 加注时：玩家本街总投入 = amount_to_call + raise_amount，其中 raise_amount >= last_raise_amount。
+#    - 底牌圈：下完盲注后 last_raise_amount = 大盲额，即最小加注 = 1BB。
+#    - 翻牌/转牌/河牌圈：进入新街时 amount_to_call、last_raise_amount 清零，从 0 开始。
 
 from enum import Enum, auto
 import random
@@ -80,7 +89,8 @@ def handle_player_action(game_state, player_id, action, amount=0):
 
     # --- Action Validation ---
     amount_to_call = game_state.get('amount_to_call', 0)
-    can_check = amount_to_call == 0
+    my_bet = player_state.get('bet_this_round', 0)
+    can_check = amount_to_call == 0 or my_bet >= amount_to_call
 
     if action == PlayerAction.CHECK and not can_check:
         return game_state, "不能 Check，必须 Call, Raise 或 Fold"
@@ -94,9 +104,9 @@ def handle_player_action(game_state, player_id, action, amount=0):
         all_in_amt = player_state['stack']
         if all_in_amt <= 0:
             return game_state, "没有筹码可 All-in"
-        to_put = min(amount_to_call - player_state.get('bet_this_round', 0), all_in_amt)
-        if to_put < 0:
-            to_put = 0
+        # 本街还需投入 = 跟注额 - 已投入；全下时实际投入 = min(还需投入, 全部筹码)，即整摞推进底池
+        call_needed = amount_to_call - player_state.get('bet_this_round', 0)
+        to_put = min(max(0, call_needed), all_in_amt) if call_needed > 0 else all_in_amt
         if to_put > 0:
             player_state['stack'] -= to_put
             player_state['bet_this_round'] = player_state.get('bet_this_round', 0) + to_put
@@ -224,6 +234,15 @@ def find_next_player(game_state, last_actor_id):
     last_raiser = game_state.get('last_raiser_id')
     max_bet = game_state.get('amount_to_call', 0)
 
+    # 若刚行动者就是 last_raiser（如 BB check），且所有在局且未 all-in 的人本街已跟齐，则本街结束
+    if last_raiser and last_actor_id == last_raiser and max_bet > 0:
+        all_matched = all(
+            game_state['players'][pid].get('bet_this_round', 0) >= max_bet
+            for pid in active_players_in_hand
+        )
+        if all_matched:
+            return None, True
+
     # 从 last_actor 的下一位开始，顺时针遍历（按 player_ids 顺序）
     last_actor_index = player_ids.index(last_actor_id)
     for i in range(1, num_players + 1):
@@ -244,10 +263,11 @@ def find_next_player(game_state, last_actor_id):
             bb_player_id = game_state.get('bb_player_id')
             
             if stage == GameStage.PREFLOP and last_raiser == bb_player_id:
-                # 检查 BB 是否已经行动过（除了下盲注）
+                # 检查 BB 是否已经行动过（除了下盲注）；若已行动则本街结束
                 bb_state = game_state['players'].get(bb_player_id)
+                if bb_state and bb_state.get('has_acted', False):
+                    return None, True
                 if bb_state and not bb_state.get('has_acted', False):
-                    # BB 还没有真正行动过，给他机会
                     return bb_player_id, False
             
             # 其他情况：本街结束
@@ -483,7 +503,7 @@ def advance_to_next_stage(game_state):
     # Reset 'current_player_id' to the first active player after the button — 翻牌/转/河从庄位下家开始
     player_order = game_state.get('player_order', [])
     dealer_button_pos = game_state.get('dealer_button_position', 0)
-    
+    first_active_player = None
     # 确保 dealer_button_pos 在有效范围内
     if player_order:
         dealer_button_pos = min(dealer_button_pos, len(player_order) - 1)
@@ -677,6 +697,9 @@ def start_new_hand(game_state):
 
     game_state['amount_to_call'] = actual_bb
     
+    # 底牌圈最小加注额 = 一个大盲（BB 视为首次“加注”）
+    game_state['last_raise_amount'] = actual_bb
+    
     # First player to act — 底牌圈从 BB 下家开始（2人对局时 SB 先行动）
     if num_players == 2:
         # 2人对局：小盲注先行动
@@ -690,7 +713,7 @@ def start_new_hand(game_state):
     
     game_state['current_player_id'] = first_to_act_id
     game_state['last_raiser_id'] = bb_player_id # The BB is the initial "raise"
-    
+    game_state['player_order'] = active_player_ids
     return game_state
 
 

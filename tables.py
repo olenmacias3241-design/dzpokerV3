@@ -160,10 +160,11 @@ class GameWrapper:
                 "name": name,
                 "chips": ps.get("stack", 0),
                 "current_bet": ps.get("bet_this_round", 0),
+                "bet_this_round": ps.get("bet_this_round", 0),
+                "total_bet_this_hand": ps.get("total_bet_this_hand", 0),
                 "hand": hand,
                 "hole_cards": hand,
                 "stack": ps.get("stack", 0),
-                "bet_this_round": ps.get("bet_this_round", 0),
                 "last_action": ps.get("last_action"),
                 "is_in_hand": ps.get("is_in_hand", False),
                 "is_active": ps.get("is_active", False),
@@ -185,11 +186,28 @@ class GameWrapper:
         current_player_name = ""
         if 0 <= current_player_idx < len(players_out) and players_out[current_player_idx]:
             current_player_name = (players_out[current_player_idx].get("name") or "")[:20]
+        sb = s.get("sb", 0)
+        bb = s.get("bb", 0)
+        amount_to_call = s.get("amount_to_call", 0)
+        last_raise_amount = s.get("last_raise_amount", 0)
+        min_raise_amount = max(last_raise_amount, bb) if bb else last_raise_amount
+        cur_bet_this_round = 0
+        if cur_pid and cur_pid in s.get("players", {}):
+            cur_bet_this_round = s["players"][cur_pid].get("bet_this_round", 0)
+        call_amount = max(0, amount_to_call - cur_bet_this_round)
+        min_raise_to_total = amount_to_call + min_raise_amount
         out = {
             "stage": stage_name.lower() if stage_name else "preflop",
             "street_label": street_label,
             "current_player_name": current_player_name,
             "pot": s.get("pot", 0),
+            "sb": sb,
+            "bb": bb,
+            "street_max_bet": amount_to_call,
+            "amount_to_call": amount_to_call,
+            "call_amount": call_amount,
+            "min_raise_amount": min_raise_amount,
+            "min_raise_to": min_raise_to_total,
             "community_cards": [self._card_to_display(c) for c in community],
             "current_player_id": cur_pid,
             "current_player_idx": current_player_idx,
@@ -198,9 +216,6 @@ class GameWrapper:
             "bb_idx": bb_idx,
             "sb_player_id": s.get("sb_player_id"),
             "bb_player_id": s.get("bb_player_id"),
-            "amount_to_call": s.get("amount_to_call", 0),
-            "call_amount": s.get("amount_to_call", 0),
-            "min_raise_to": s.get("amount_to_call", 0) + max(s.get("last_raise_amount", s.get("bb", 0)), s.get("bb", 0)),
             "last_action": next((p.get("last_action") for p in s["players"].values() if p.get("last_action")), "") or "",
             "players": players_out,
             "max_players": len(seat_to_pid),
@@ -256,9 +271,16 @@ class GameWrapper:
                         winner_name = (u.get("username") or "玩家")[:20]
                         break
                 amount_won = sum(last_winnings.get(pid, 0) for pid in winners)
+                hole = s["players"].get(winner_pid, {}).get("hole_cards", [])
+                community = s.get("community_cards", [])
+                winner_hand_type = get_hand_type_name(hole, community) if hole and len(community) >= 3 else None
                 out["winner_idx"] = winner_idx
-                out["winner_info"] = "{} 获胜！赢得 {} 筹码".format(winner_name, amount_won)
+                out["winner_hand_type"] = winner_hand_type
                 out["winner_amount"] = amount_won
+                if winner_hand_type:
+                    out["winner_info"] = "{} 以 {} 获胜！赢得 {} 筹码".format(winner_name, winner_hand_type, amount_won)
+                else:
+                    out["winner_info"] = "{} 获胜！赢得 {} 筹码".format(winner_name, amount_won)
         return out
 
     def start_new_round(self):

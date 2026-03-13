@@ -10,3 +10,6 @@ mysql-connector-python>=8.0
 # 后端接口测试
 pytest>=7.0
 requests>=2.28
+
+# 前端 E2E 测试
+playwright>=1.40
