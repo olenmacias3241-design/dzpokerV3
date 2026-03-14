@@ -18,8 +18,8 @@ _lock = threading.Lock()
 # 全局串行：同一时刻只允许一个机器人行动（含思考时间），保证按次序下注
 _bot_action_lock = threading.Lock()
 
-BOT_THINK_MIN = 4.0   # 每个机器人随机 4～6 秒，不统一
-BOT_THINK_MAX = 6.0
+BOT_THINK_MIN = 2.0   # 每个机器人随机 2～4 秒，便于看出「一个一个」轮询
+BOT_THINK_MAX = 4.0
 NEW_ROUND_DELAY = 3.0 # 新一局开始前的等待时间（秒）
 
 
@@ -89,12 +89,14 @@ def _decide(game_state):
     call_amount = max(0, atc - bet_this_round)
     effective_call = min(call_amount, stack)
 
-    # 无人下注时：提高下注概率，避免全都过牌「一起过」
+    # 无人下注时：尽量下注，减少「一起过」；仅小概率过牌
     if atc == 0:
+        if stack <= 0:
+            return "check", 0
         r = random.random()
-        if r < 0.35:
+        if r < 0.15:
             action, amount = "check", 0
-        elif r < 0.75:
+        elif r < 0.55:
             bet_size = max(bb, int(pot * random.uniform(0.5, 1.0)))
             bet_size = min(bet_size, stack)
             action, amount = ("bet", bet_size) if bet_size > 0 else ("check", 0)
@@ -154,7 +156,7 @@ def _decide(game_state):
 
 
 def _think_time_for_action(action, amount):
-    """返回机器人下注前思考时间（秒），统一为 5～10 秒，避免一下过了。"""
+    """返回机器人下注前思考时间（秒），便于看出轮次、避免一起过。"""
     return random.uniform(BOT_THINK_MIN, BOT_THINK_MAX)
 
 
@@ -170,7 +172,7 @@ def _broadcast(table_id):
         return
     wrapper = t["game"]
     emotes = t.get("emotes")
-    # 对每个在线真人玩家发送含私牌的状态（含表情供展示）
+    # 对每个在线真人玩家发送含私牌的状态（每人只发一次，避免重复推送导致界面断片）
     for p in wrapper.players:
         if p and p.sid:
             state = wrapper.get_state(private_for_player_sid=p.sid, emotes=emotes)
@@ -220,9 +222,12 @@ def _bot_loop():
                     threading.Thread(target=_start_new, daemon=True).start()
                     continue
 
-                # 检查是否轮到机器人
+                # 检查是否轮到机器人（优先 _tokens，其次用游戏状态里的 is_bot 兜底）
                 current_pid = gs.get("current_player_id")
-                if not current_pid or not _is_bot(current_pid):
+                if not current_pid:
+                    continue
+                is_bot_turn = _is_bot(current_pid) or gs.get("players", {}).get(current_pid, {}).get("is_bot")
+                if not is_bot_turn:
                     continue
 
                 # 找到座位
@@ -255,36 +260,54 @@ def _bot_loop():
                             continue
                         gs = wrapper.state
                         print(f"[Bot] 牌桌 {tid}, {bot_name} 执行: {action} {amount}")
-                        from database import SessionLocal
-                        db = SessionLocal()
+                        db = None
+                        try:
+                            from database import SessionLocal
+                            db = SessionLocal()
+                        except Exception:
+                            pass
                         try:
                             amt_int = int(amount) if isinstance(amount, (int, float)) else 0
                             ok, err = tables.process_action(db, tid, seat, action, amt_int)
                             if ok:
-                                db.commit()
+                                if db:
+                                    db.commit()
                                 print(f"[Bot] {bot_name} 行动成功: {action} {amount}")
                             else:
-                                db.rollback()
+                                if db:
+                                    db.rollback()
                                 print(f"[Bot] {bot_name} 行动失败: {err}, 尝试兜底策略")
                                 fallback = "check" if gs.get("amount_to_call", 0) == 0 else "call"
                                 ok2, err2 = tables.process_action(db, tid, seat, fallback, 0)
                                 if ok2:
-                                    db.commit()
+                                    if db:
+                                        db.commit()
                                     print(f"[Bot] {bot_name} 兜底成功: {fallback}")
                                 else:
-                                    db.rollback()
+                                    if db:
+                                        db.rollback()
                                     print(f"[Bot] {bot_name} 兜底也失败: {err2}")
                         except Exception as e:
-                            try:
-                                db.rollback()
-                            except Exception:
-                                pass
-                            print(f"[Bot] process_action db error: {e}")
+                            if db:
+                                try:
+                                    db.rollback()
+                                except Exception:
+                                    pass
+                            print(f"[Bot] process_action error: {e}")
                         finally:
-                            try:
-                                db.close()
-                            except Exception:
-                                pass
+                            if db:
+                                try:
+                                    db.close()
+                                except Exception:
+                                    pass
+                    # 广播最新状态（含 current_player_id = 下一个行动者），确保轮到下一个角色
+                    next_pid = wrapper.state.get("current_player_id") if wrapper else None
+                    if next_pid:
+                        next_name = tables._tokens.get(
+                            next((tok for tok, u in tables._tokens.items() if u.get("user_id") == next_pid), ""),
+                            {}
+                        ).get("username", next_pid)
+                        print(f"[Bot] 牌桌 {tid} 下一个行动者: {next_name} ({next_pid})")
                     _broadcast(tid)
                     # 给前端一点时间收到 state 再继续下一轮，避免「一起过」的错觉
                     time.sleep(0.4)

@@ -256,6 +256,11 @@ def find_next_player(game_state, last_actor_id):
         if player_state.get('bet_this_round', 0) < max_bet:
             return next_player_id, False
 
+        # 无人下注时（max_bet=0）：尚未行动的玩家仍需给一次 check/bet 机会
+        # 这是翻牌/转牌/河牌圈的关键：所有人都应轮流行动，而不是第一个 check 后就结束本街
+        if max_bet == 0 and not player_state.get('has_acted', False):
+            return next_player_id, False
+
         # 已跟齐，且已经回到 last_raiser
         if last_raiser and next_player_id == last_raiser:
             # 底牌圈特殊处理：BB 是初始加注者，但需要给他行动机会

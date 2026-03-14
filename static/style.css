@@ -74,7 +74,7 @@ body {
     width: min(920px, 96%);
     aspect-ratio: 1.85 / 1;
     max-height: min(50vh, 420px);
-    margin: 0 0 24px 0;
+    margin: 0 0 175px 0;
     background: var(--felt);
     background-image:
         radial-gradient(ellipse 90% 70% at 50% 50%, var(--felt-light) 0%, var(--felt) 50%),
@@ -174,8 +174,80 @@ body {
 }
 
 .pot {
-    margin: 4px 0;
+    margin: 8px 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 14px;
 }
+
+.pot-chips-wrap {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: 32px;
+}
+
+.pot-chips {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0 2px;
+}
+
+/* ── 赌场风格筹码：颜色分级 + 白边圆形 + 内圈点纹 + 3D 光影 ── */
+.pot-chips .chip {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+    border: 2.5px solid rgba(255,255,255,0.9);
+    box-shadow:
+        0 0 0 1.5px rgba(0,0,0,0.6),
+        inset 0 0 0 5px rgba(0,0,0,0.16),
+        inset 0 3px 6px rgba(255,255,255,0.25),
+        0 4px 12px rgba(0,0,0,0.6);
+}
+/* 边缘点纹（模拟赌场筹码 edge spots） */
+.pot-chips .chip::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    border: 2px dotted rgba(255,255,255,0.45);
+    pointer-events: none;
+}
+/* 高光 */
+.pot-chips .chip::before {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 30%, rgba(255,255,255,0.38), transparent 58%);
+    pointer-events: none;
+}
+
+/* 面值颜色：白/红/绿/蓝/黑/紫/橙/金 */
+.pot-chips .chip:nth-child(1) { background: #d0d0d0; border-color: #f4f4f4; }
+.pot-chips .chip:nth-child(2) { background: #cc1818; border-color: #ff7070; }
+.pot-chips .chip:nth-child(3) { background: #189018; border-color: #60e060; }
+.pot-chips .chip:nth-child(4) { background: #1850d8; border-color: #78aaff; }
+.pot-chips .chip:nth-child(5) { background: #141414; border-color: #585858; }
+.pot-chips .chip:nth-child(6) { background: #8820c8; border-color: #cc68ff; }
+.pot-chips .chip:nth-child(7) { background: #c07010; border-color: #f4b040; }
+.pot-chips .chip:nth-child(8) { background: #d8c020; border-color: #fff050; }
+
+/* 堆叠偏移：每枚上移 5px，展示叠放效果 */
+.pot-chips .chip:nth-child(1) { transform: translateY(0); }
+.pot-chips .chip:nth-child(2) { transform: translateY(-5px); }
+.pot-chips .chip:nth-child(3) { transform: translateY(-10px); }
+.pot-chips .chip:nth-child(4) { transform: translateY(-15px); }
+.pot-chips .chip:nth-child(5) { transform: translateY(-20px); }
+.pot-chips .chip:nth-child(6) { transform: translateY(-25px); }
+.pot-chips .chip:nth-child(7) { transform: translateY(-30px); }
+.pot-chips .chip:nth-child(8) { transform: translateY(-35px); }
 
 .pot h3 {
     font-size: 1rem;
@@ -188,6 +260,48 @@ body {
     font-family: 'JetBrains Mono', monospace;
     color: var(--accent-amber);
     font-weight: 700;
+}
+
+/* 座位下注筹码堆 */
+.bet-chips {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0 1px;
+    margin-top: 2px;
+}
+
+.bet-chips .chip {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    position: relative;
+    border: 2px solid rgba(255,255,255,0.88);
+    box-shadow:
+        0 0 0 1px rgba(0,0,0,0.55),
+        inset 0 0 0 3px rgba(0,0,0,0.15),
+        0 2px 6px rgba(0,0,0,0.5);
+}
+.bet-chips .chip::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    border: 1.5px dotted rgba(255,255,255,0.4);
+    pointer-events: none;
+}
+/* 座位筹码颜色与底池筹码一致 */
+.bet-chips .chip:nth-child(1) { background: #d0d0d0; border-color: #f4f4f4; }
+.bet-chips .chip:nth-child(2) { background: #cc1818; border-color: #ff7070; }
+.bet-chips .chip:nth-child(3) { background: #189018; border-color: #60e060; }
+.bet-chips .chip:nth-child(4) { background: #1850d8; border-color: #78aaff; }
+.bet-chips .chip:nth-child(5) { background: #141414; border-color: #585858; }
+
+.bet-chips-value {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-amber);
+    margin-left: 4px;
 }
 
 .side-pots {
@@ -652,15 +766,15 @@ body {
     margin-top: 2px;
 }
 
-/* ----- Action Bar（始终贴底部） ----- */
+/* ----- Action Bar（紧凑、不遮挡底部座位） ----- */
 .actions {
     margin-top: auto;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
-    padding: 16px 24px;
+    gap: 8px;
+    padding: 10px 16px 12px;
     background: rgba(19, 32, 45, 0.95);
     border: 1px solid rgba(245, 197, 66, 0.22);
     border-radius: var(--radius-panel);

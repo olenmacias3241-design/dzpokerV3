@@ -24,6 +24,114 @@ function getUrlParams() {
     return params;
 }
 
+/** 根据底池数额更新桌面筹码堆显示（#pot-chips） */
+function updatePotChips(potNum) {
+    var el = document.getElementById('pot-chips');
+    if (!el) return;
+    var n = 0;
+    if (potNum > 0) {
+        if (potNum <= 50) n = 1;
+        else if (potNum <= 200) n = 2;
+        else if (potNum <= 500) n = 3;
+        else if (potNum <= 1000) n = 4;
+        else if (potNum <= 3000) n = 5;
+        else if (potNum <= 8000) n = 6;
+        else if (potNum <= 20000) n = 7;
+        else n = 8;
+    }
+    var html = '';
+    for (var i = 0; i < n; i++) html += '<span class="chip" aria-hidden="true"></span>';
+    el.innerHTML = html;
+}
+
+/** 牌桌音效：chip=下注/跟注/加注, fold=弃牌, win=获胜。受设置 soundEnabled / .sound-disabled 控制 */
+function playGameSound(type) {
+    if (document.body && document.body.classList.contains('sound-disabled')) return;
+    try {
+        var C = window.AudioContext || window.webkitAudioContext;
+        if (!C) return;
+        var ctx = window._gameAudioContext || (window._gameAudioContext = new C());
+        if (ctx.state === 'suspended') ctx.resume();
+        var now = ctx.currentTime;
+
+        /** 单枚筹码碰撞：白噪声脉冲 + 带通滤波（陶瓷质感 3–5kHz）+ 极速衰减 */
+        function chipClick(when) {
+            var sr = ctx.sampleRate;
+            var len = Math.floor(sr * 0.065);
+            var buf = ctx.createBuffer(1, len, sr);
+            var d = buf.getChannelData(0);
+            for (var i = 0; i < len; i++) {
+                d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 5);
+            }
+            var src = ctx.createBufferSource();
+            src.buffer = buf;
+            /* 带通滤波：中心 4kHz，模拟陶瓷/塑料筹码的脆响 */
+            var bp = ctx.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = 4200;
+            bp.Q.value = 2.8;
+            /* 高频共鸣峰，增加"叮"的感觉 */
+            var pk = ctx.createBiquadFilter();
+            pk.type = 'peaking';
+            pk.frequency.value = 3000;
+            pk.gain.value = 14;
+            pk.Q.value = 7;
+            var g = ctx.createGain();
+            g.gain.setValueAtTime(0.55, when);
+            g.gain.exponentialRampToValueAtTime(0.001, when + 0.065);
+            src.connect(bp); bp.connect(pk); pk.connect(g); g.connect(ctx.destination);
+            src.start(when); src.stop(when + 0.065);
+        }
+
+        if (type === 'chip') {
+            /* 多枚筹码连续入桌：3 次快速点击，模拟抛筹码 */
+            chipClick(now);
+            chipClick(now + 0.042);
+            chipClick(now + 0.078);
+        } else if (type === 'fold') {
+            /* 弃牌：低频纸张划过声 */
+            var sr2 = ctx.sampleRate;
+            var len2 = Math.floor(sr2 * 0.14);
+            var buf2 = ctx.createBuffer(1, len2, sr2);
+            var d2 = buf2.getChannelData(0);
+            for (var i = 0; i < len2; i++) {
+                d2[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len2, 2.2) * 0.6;
+            }
+            var src2 = ctx.createBufferSource();
+            src2.buffer = buf2;
+            var lp = ctx.createBiquadFilter();
+            lp.type = 'lowpass'; lp.frequency.value = 900;
+            var g2 = ctx.createGain();
+            g2.gain.setValueAtTime(0.22, now);
+            g2.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+            src2.connect(lp); lp.connect(g2); g2.connect(ctx.destination);
+            src2.start(now); src2.stop(now + 0.14);
+        } else if (type === 'win') {
+            /* 获胜：一串筹码雨（8 枚连续落桌，频率递增） */
+            for (var k = 0; k < 8; k++) {
+                (function(delay, freq) {
+                    var sr3 = ctx.sampleRate;
+                    var len3 = Math.floor(sr3 * 0.07);
+                    var buf3 = ctx.createBuffer(1, len3, sr3);
+                    var d3 = buf3.getChannelData(0);
+                    for (var i = 0; i < len3; i++) {
+                        d3[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len3, 4);
+                    }
+                    var src3 = ctx.createBufferSource();
+                    src3.buffer = buf3;
+                    var bp3 = ctx.createBiquadFilter();
+                    bp3.type = 'bandpass'; bp3.frequency.value = freq; bp3.Q.value = 3.5;
+                    var g3 = ctx.createGain();
+                    g3.gain.setValueAtTime(0.35, now + delay);
+                    g3.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.07);
+                    src3.connect(bp3); bp3.connect(g3); g3.connect(ctx.destination);
+                    src3.start(now + delay); src3.stop(now + delay + 0.08);
+                })(k * 0.065, 3200 + k * 280);
+            }
+        }
+    } catch (e) { /* 静默忽略 */ }
+}
+
 function ensureToken() {
     var t = (typeof window.authGetToken === 'function' && window.authGetToken()) || localStorage.getItem('token') || '';
     if (t) return Promise.resolve(t);
@@ -658,12 +766,14 @@ function updateUI(state) {
     }
     document.getElementById('pot-display').innerText = state.pot != null ? state.pot : 0;
     var potNum = state.pot != null ? state.pot : 0;
+    updatePotChips(potNum);
     if (potNum > prevPot) {
         var potWrap = document.getElementById('pot-display');
         if (potWrap && potWrap.parentElement) {
             potWrap.parentElement.classList.add('pot-bump');
             setTimeout(function () { potWrap.parentElement.classList.remove('pot-bump'); }, 500);
         }
+        playGameSound('chip');
     }
     const sidePotEl = document.getElementById('side-pots-display');
     if (sidePotEl) {
@@ -704,6 +814,7 @@ function updateUI(state) {
         if (handTypeDisplayEl) handTypeDisplayEl.textContent = '—';
     }
     document.getElementById('last-action-display').innerText = state.last_action || '';
+    if (state.last_action && state.last_action.indexOf('弃牌') >= 0) playGameSound('fold');
 
     const communityContainer = document.getElementById('community-cards-display');
     var communityCards = state.community_cards || [];
@@ -862,6 +973,7 @@ function updateUI(state) {
             '<strong>' + (p.name || '玩家') + '</strong>' +
             '<span class="chips-line">筹码 ' + (p.chips != null ? p.chips : 0) + '</span>' +
             (state.winnings_by_seat && state.winnings_by_seat[realSeat] > 0 ? '<span class="win-amount">+' + state.winnings_by_seat[realSeat] + '</span>' : '') +
+            (function () { var b = p.current_bet != null ? p.current_bet : 0; return b > 0 ? '<div class="bet-chips" title="本街下注 ' + b + '"><span class="chip"></span><span class="chip"></span><span class="chip"></span><span class="bet-chips-value">' + b + '</span></div>' : ''; }()) +
             '<span class="bet-line">本街下注: ' + (p.current_bet != null ? p.current_bet : 0) + '</span>' +
             (p.is_all_in ? '<span class="all-in-tag">All-in</span>' : '') +
             (realSeat === mySeat && state.my_hand_type ? '<div class="my-hand-type">' + state.my_hand_type + '</div>' : '') +
@@ -1205,6 +1317,7 @@ function animateCards(container, cards, stage) {
 }
 
 function showWinnerAnimation(winnerInfo, winnerIdx, players, winnerAmount, winnerHandType) {
+    playGameSound('win');
     const overlay = document.getElementById('winner-overlay');
     const textEl = document.getElementById('winner-text');
     const amountEl = document.getElementById('winner-amount');

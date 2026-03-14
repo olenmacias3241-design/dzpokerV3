@@ -562,16 +562,7 @@ def start_game(db, table_id, token):
     t["game"] = GameWrapper(game_state, seat_to_pid)
     t["status"] = "playing"
 
-    # 若第一个行动者是机器人，立即执行所有连续机器人回合（不略过、不等待后台循环）
-    wrapper = t["game"]
-    cur_pid = wrapper.state.get("current_player_id")
-    if cur_pid and wrapper.state["players"].get(cur_pid, {}).get("is_bot"):
-        try:
-            final_state, _ = game_logic.run_ai_turns(wrapper.state)
-            wrapper.state = final_state
-        except Exception as e:
-            print(f"[start_game] run_ai_turns: {e}")
-
+    # 若第一个行动者是机器人，不在此处一次性跑完；交给 bots 后台循环按顺序一个一个行动并广播，便于前端看到依次下注/过牌。
     return True, None
 
 
@@ -640,46 +631,7 @@ def process_action(db, table_id, seat_index, action_str, amount=0):
             action_order=action_order
         ))
 
-    # --- If next player(s) are bots, run AI loop to let them act automatically ---
-    try:
-        # Loop while current_player_id corresponds to a bot in this table
-        while True:
-            cur_pid = wrapper.state.get('current_player_id')
-            if not cur_pid:
-                break
-            # map pid -> seat index
-            if cur_pid in wrapper._seat_to_pid:
-                cur_seat = wrapper._seat_to_pid.index(cur_pid)
-                # check if seat is occupied and if it's a bot
-                pid_state = wrapper.state['players'].get(cur_pid, {})
-                if pid_state.get('is_bot'):
-                    # run AI loop and get updated state + actions（必须写回 wrapper.state，否则机器人行动不生效）
-                    final_state, actions = game_logic.run_ai_turns(wrapper.state)
-                    wrapper.state = final_state
-                    # persist each AI action to hand_actions (with stage and action_order)
-                    if actions and db and HandAction and hand_id:
-                        next_order = db.query(HandAction).filter_by(hand_id=hand_id).count() + 1
-                        for item in actions:
-                            if len(item) >= 4:
-                                aid, aname, aamount, stage_name = item[0], item[1], item[2], item[3]
-                            else:
-                                aid, aname, aamount = item[0], item[1], item[2]
-                                stage_name = (wrapper.state.get('stage') or game_logic.GameStage.PREFLOP).name
-                            db.add(HandAction(
-                                hand_id=hand_id,
-                                user_id=aid,
-                                action_type=aname,
-                                amount=int(aamount) if aamount is not None else None,
-                                stage=stage_name,
-                                action_order=next_order,
-                            ))
-                            next_order += 1
-                    # continue loop in case multiple bots act in sequence
-                    continue
-            break
-    except Exception as e:
-        # don't block on AI errors; surface to caller if necessary
-        print('AI run error:', e)
+    # 下一个行动者若是机器人，不在此处一次性执行；由 bots 后台循环按顺序每次只执行一个机器人并广播，保证前端看到「依次」下注/过牌。
 
     return True, None
 
