@@ -10,6 +10,13 @@ try:
 except Exception:
     HandAction = None  # 无数据库时降级
 
+try:
+    from database import Hand as _Hand, HandStatus as _HandStatus, User as _User, HandParticipant as _HandParticipant
+    _DB_MODELS_LOADED = True
+except Exception:
+    _Hand = _HandStatus = _User = _HandParticipant = None
+    _DB_MODELS_LOADED = False
+
 # ──────────────────────────────────────────────────────────
 # 全局内存状态
 # ──────────────────────────────────────────────────────────
@@ -147,7 +154,7 @@ class GameWrapper:
             stage = s.get("stage")
             stage_name = (stage.name if stage else "PREFLOP") if stage else "PREFLOP"
             in_showdown = stage_name in ("SHOWDOWN", "ENDED")
-            not_folded = ps.get("is_in_hand", False) and ps.get("is_active", False)
+            not_folded = ps.get("is_in_hand", False)
             if pid == private_pid and hole:
                 hand = [self._card_to_display(c) for c in hole]
             elif in_showdown and not_folded and hole:
@@ -168,7 +175,7 @@ class GameWrapper:
                 "last_action": ps.get("last_action"),
                 "is_in_hand": ps.get("is_in_hand", False),
                 "is_active": ps.get("is_active", False),
-                "has_folded": not ps.get("is_in_hand", True) or not ps.get("is_active", True),
+                "has_folded": not ps.get("is_in_hand", True),
                 "is_all_in": ps.get("is_all_in", False),
             })
         stage = s.get("stage")
@@ -221,7 +228,7 @@ class GameWrapper:
             "max_players": len(seat_to_pid),
             "pending_insurance": s.get("pending_insurance") or self.pending_insurance,
             "is_running": s.get("current_player_id") is not None and stage_name not in ("SHOWDOWN", "ENDED"),
-            "side_pots": [{"amount": p.get("amount", p)} for p in s.get("pots", [])] if s.get("pots") else [],
+            "side_pots": [] if stage_name == "ENDED" else ([{"amount": p.get("amount", p)} for p in s.get("pots", [])] if s.get("pots") else []),
         }
         if s.get("pending_insurance"):
             pi = s["pending_insurance"]
@@ -255,6 +262,22 @@ class GameWrapper:
             out["emotes"] = out_emotes
         else:
             out["emotes"] = {}
+        # SHOWDOWN / ENDED：为所有未弃牌玩家计算牌型，前端用于摊牌阶段展示
+        if stage_name in ("SHOWDOWN", "ENDED"):
+            community = s.get("community_cards", [])
+            seat_hand_types = {}
+            if len(community) >= 3:
+                for seat_idx, pid in enumerate(seat_to_pid):
+                    if not pid:
+                        continue
+                    ps_seat = s["players"].get(pid, {})
+                    hole_seat = ps_seat.get("hole_cards", [])
+                    if ps_seat.get("is_in_hand", False) and hole_seat:
+                        ht = get_hand_type_name(hole_seat, community)
+                        if ht:
+                            seat_hand_types[seat_idx] = ht
+            out["seat_hand_types"] = seat_hand_types
+
         if stage_name == "ENDED":
             winners = s.get("winners", [])
             last_winnings = s.get("last_hand_winnings", {})
@@ -263,24 +286,41 @@ class GameWrapper:
                 for seat_idx, pid in enumerate(seat_to_pid) if pid
             }
             if winners:
+                community = s.get("community_cards", [])
+                amount_won = sum(last_winnings.get(pid, 0) for pid in winners)
+                # 主要赢家（用于 winner_idx 显示光圈）
                 winner_pid = winners[0]
                 winner_idx = seat_to_pid.index(winner_pid) if winner_pid in seat_to_pid else -1
-                winner_name = str(winner_pid)[:12]
-                for _tok, u in _tokens.items():
-                    if str(u.get("user_id")) == str(winner_pid):
-                        winner_name = (u.get("username") or "玩家")[:20]
-                        break
-                amount_won = sum(last_winnings.get(pid, 0) for pid in winners)
+                # 所有赢家名字
+                winner_names = []
+                for wpid in winners:
+                    wname = str(wpid)[:12]
+                    for _tok, u in _tokens.items():
+                        if str(u.get("user_id")) == str(wpid):
+                            wname = (u.get("username") or "玩家")[:20]
+                            break
+                    winner_names.append(wname)
                 hole = s["players"].get(winner_pid, {}).get("hole_cards", [])
-                community = s.get("community_cards", [])
                 winner_hand_type = get_hand_type_name(hole, community) if hole and len(community) >= 3 else None
                 out["winner_idx"] = winner_idx
                 out["winner_hand_type"] = winner_hand_type
                 out["winner_amount"] = amount_won
-                if winner_hand_type:
-                    out["winner_info"] = "{} 以 {} 获胜！赢得 {} 筹码".format(winner_name, winner_hand_type, amount_won)
+                out["winner_idxs"] = [
+                    seat_to_pid.index(wpid) for wpid in winners if wpid in seat_to_pid
+                ]
+                if len(winners) > 1:
+                    names_str = " & ".join(winner_names)
+                    each_amount = amount_won // len(winners)
+                    if winner_hand_type:
+                        out["winner_info"] = "{} 以 {} 平分底池！各赢 {} 筹码".format(names_str, winner_hand_type, each_amount)
+                    else:
+                        out["winner_info"] = "{} 平分底池！各赢 {} 筹码".format(names_str, each_amount)
                 else:
-                    out["winner_info"] = "{} 获胜！赢得 {} 筹码".format(winner_name, amount_won)
+                    winner_name = winner_names[0]
+                    if winner_hand_type:
+                        out["winner_info"] = "{} 以 {} 获胜！赢得 {} 筹码".format(winner_name, winner_hand_type, amount_won)
+                    else:
+                        out["winner_info"] = "{} 获胜！赢得 {} 筹码".format(winner_name, amount_won)
         return out
 
     def start_new_round(self):
@@ -409,7 +449,8 @@ def sit(db_or_table_id, table_id_or_token=None, token_or_seat=None, seat_idx=Non
         return False, "该座位已有人"
     
     t["seats"][s] = uid
-    t["stacks"][s] = user.get("stack", 1000)
+    # 新建牌局坐下时至少给默认买入，避免之前输光后筹码为 0 导致无法参与
+    t["stacks"][s] = max(user.get("stack") or 0, 1000)
 
     # 检查是否满足开局条件（仅当 auto_start 时自动开局，避免批量加机器人时加一个就开一局）
     seated_players = sum(1 for seat in t["seats"] if seat is not None)
@@ -442,6 +483,46 @@ def leave(table_id, token):
     t["seats"][idx] = None
     t["stacks"][idx] = 0
     return True, None
+
+
+def remove_busted_players(table_id):
+    """手牌结束后，将筹码为 0 的玩家/机器人从座位上清空，并清理该座位信息。"""
+    t = TABLES.get(table_id)
+    if not t or not t.get("game"):
+        return
+    wrapper = t["game"]
+    s = wrapper.state
+    stage = s.get("stage")
+    stage_name = (stage.name if stage else "") if stage else ""
+    if stage_name != "ENDED":
+        return
+    seat_to_pid = wrapper._seat_to_pid
+    removed_any = False
+    for i in range(len(seat_to_pid)):
+        pid = seat_to_pid[i]
+        if not pid:
+            continue
+        stack = s.get("players", {}).get(pid, {}).get("stack", 0)
+        if stack <= 0:
+            t["seats"][i] = None
+            t["stacks"][i] = 0
+            if pid in s.get("players", {}):
+                del s["players"][pid]
+            seat_to_pid[i] = None
+            if i < len(wrapper.players):
+                wrapper.players[i] = None
+            for sid, (tid, seat) in list(_sid_map.items()):
+                if tid == table_id and seat == i:
+                    del _sid_map[sid]
+                    break
+            removed_any = True
+    if removed_any:
+        new_players = {}
+        for pid in seat_to_pid:
+            if pid and pid in s.get("players", {}):
+                new_players[pid] = s["players"][pid]
+        s["players"] = new_players
+        print(f"[Table] 牌桌 {table_id} 已清理输光筹码的座位")
 
 
 def get_table_state(table_id, token):
@@ -522,16 +603,19 @@ def start_game(db, table_id, token):
 
     players_dict = {}
     for seat_idx, uid in seated:
-        # detect bot flag from tokens (if the seat was occupied by a bot token earlier)
+        # detect bot: _tokens 标记 is_bot，或 uid 以 bot_ 开头（避免漏认导致「轮到某机器人就卡住」）
         is_bot = False
-        try:
-            # tokens map token->user; reverse lookup for uid
-            for tok, u in _tokens.items():
-                if u.get("user_id") == uid and u.get("is_bot"):
-                    is_bot = True
-                    break
-        except Exception:
-            is_bot = False
+        uid_str = str(uid) if uid is not None else ""
+        if uid_str.startswith("bot_"):
+            is_bot = True
+        if not is_bot:
+            try:
+                for tok, u in _tokens.items():
+                    if str(u.get("user_id") or "") == uid_str and u.get("is_bot"):
+                        is_bot = True
+                        break
+            except Exception:
+                pass
         players_dict[uid] = {
             "stack": t["stacks"][seat_idx],
             "is_in_hand": True,
@@ -560,10 +644,133 @@ def start_game(db, table_id, token):
     game_logic.start_new_hand(game_state)
 
     t["game"] = GameWrapper(game_state, seat_to_pid)
+
+    # 创建 Hand 记录（有 db 时，FK 不满足时静默忽略）
+    t["current_hand_id"] = None
+    if db and _Hand is not None:
+        try:
+            h = _Hand(
+                table_id=table_id,
+                status=_HandStatus.preflop,
+                dealer_button_position=game_state.get("dealer_button_position", 0),
+            )
+            db.add(h)
+            db.flush()
+            t["current_hand_id"] = h.id
+        except Exception as e:
+            print(f"[DB] Hand 记录创建失败（可忽略）: {e}")
+            try:
+                db.rollback()
+            except Exception:
+                pass
+
     t["status"] = "playing"
 
     # 若第一个行动者是机器人，不在此处一次性跑完；交给 bots 后台循环按顺序一个一个行动并广播，便于前端看到依次下注/过牌。
     return True, None
+
+
+# ──────────────────────────────────────────────────────────
+# 数据库持久化工具
+# ──────────────────────────────────────────────────────────
+
+def sync_stacks_to_db(db, table_id):
+    """将所有在座玩家的内存筹码同步到 _tokens 和 User.coins_balance（注册用户）。"""
+    if not db:
+        return
+    t = TABLES.get(table_id)
+    if not t or not t.get("game"):
+        return
+    wrapper = t["game"]
+    for pid in wrapper._seat_to_pid:
+        if not pid:
+            continue
+        ps = wrapper.state.get("players", {}).get(pid)
+        if not ps:
+            continue
+        new_stack = ps.get("stack", 0)
+        # 1. 更新内存 _tokens（同 session 内换桌/下一局带正确筹码）
+        for u in _tokens.values():
+            if str(u.get("user_id")) == str(pid):
+                u["stack"] = new_stack
+                break
+        # 2. 更新 DB User.coins_balance（仅注册用户：pid 可转为整数）
+        if _User is None:
+            continue
+        try:
+            uid_int = int(pid)
+            row = db.query(_User).filter(_User.id == uid_int).first()
+            if row:
+                row.coins_balance = new_stack
+        except Exception:
+            pass  # guest/bot，无 DB 记录，跳过
+
+
+def _cards_to_db_str(cards):
+    """将底牌/公共牌列表转为 DB 字符串，如 'Ah,Kd'。"""
+    if not cards:
+        return ""
+    out = []
+    for c in cards:
+        if hasattr(c, "to_str"):
+            out.append(c.to_str())
+        elif isinstance(c, str):
+            out.append(c)
+        else:
+            out.append(str(c))
+    return ",".join(out)
+
+
+def finalize_hand(db, table_id):
+    """手牌结束时：同步所有玩家筹码到 DB，更新 Hand 记录，并写入 hand_participants。"""
+    if not db:
+        return
+    t = TABLES.get(table_id)
+    if not t or not t.get("game"):
+        return
+    if t["game"].state.get("stage") != game_logic.GameStage.ENDED:
+        return
+    sync_stacks_to_db(db, table_id)
+    wrapper = t["game"]
+    s = wrapper.state
+    hand_id = t.get("current_hand_id")
+    if hand_id and _Hand is not None:
+        try:
+            from datetime import datetime
+            row = db.query(_Hand).filter(_Hand.id == hand_id).first()
+            if row:
+                row.end_time = datetime.now()
+                row.status = _HandStatus.ended
+                row.community_cards = _cards_to_db_str(s.get("community_cards"))
+                row.pot_size = int(s.get("pot", 0))
+            if _HandParticipant is not None:
+                last_winnings = s.get("last_hand_winnings") or {}
+                seat_to_pid = wrapper._seat_to_pid
+                players = s.get("players") or {}
+                for seat_idx, pid in enumerate(seat_to_pid):
+                    if not pid:
+                        continue
+                    try:
+                        uid = int(pid)
+                    except (TypeError, ValueError):
+                        continue
+                    pstate = players.get(pid, {})
+                    hole = pstate.get("hole_cards") or []
+                    hole_str = _cards_to_db_str(hole) if hole else ""
+                    win_amt = int(last_winnings.get(pid, 0))
+                    db.add(_HandParticipant(
+                        hand_id=hand_id,
+                        user_id=uid,
+                        seat_number=seat_idx,
+                        hole_cards=hole_str,
+                        win_amount=win_amt,
+                    ))
+        except Exception as e:
+            print(f"[DB] finalize_hand 写入失败（可忽略）: {e}")
+            try:
+                db.rollback()
+            except Exception:
+                pass
 
 
 # ──────────────────────────────────────────────────────────
@@ -619,17 +826,22 @@ def process_action(db, table_id, seat_index, action_str, amount=0):
 
     hand_id = table.get("current_hand_id")
     if db and HandAction and hand_id:
-        # 获取当前行动顺序
-        action_order = db.query(HandAction).filter_by(hand_id=hand_id).count() + 1
-        
-        db.add(HandAction(
-            hand_id=hand_id,
-            user_id=user_id,
-            action_type=action.name,
-            amount=int(amount) if amount else None,
-            stage=stage_after,
-            action_order=action_order
-        ))
+        try:
+            uid_int = int(user_id)
+            db.add(HandAction(
+                hand_id=hand_id,
+                user_id=uid_int,
+                action_type=action.name,
+                amount=int(amount) if amount else None,
+            ))
+        except Exception:
+            pass  # guest/bot user_id 非整数，跳过
+
+    # 手牌结束时：同步筹码到数据库，并让输光筹码的玩家/机器人立即离座
+    if wrapper.state.get("stage") == game_logic.GameStage.ENDED:
+        if db:
+            finalize_hand(db, table_id)
+        remove_busted_players(table_id)
 
     # 下一个行动者若是机器人，不在此处一次性执行；由 bots 后台循环按顺序每次只执行一个机器人并广播，保证前端看到「依次」下注/过牌。
 

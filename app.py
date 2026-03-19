@@ -14,6 +14,13 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = getattr(__import__("config"), "SECRET_KEY", "dzpoker-secret")
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
+# 机器人后台线程：与 __main__ 中重复调用 start 无害，保证无论用 python app.py 还是 flask run 都能轮询下注
+try:
+    import bots
+    bots.start(socketio)
+except Exception as e:
+    print("[Startup] 机器人模块启动跳过:", e)
+
 
 def _is_api_request():
     return request.path.startswith("/api/")
@@ -161,6 +168,12 @@ def api_auth_register():
             return jsonify({"ok": False, "message": err}), 400
         
         token = auth.encode_jwt(user.id)
+        # 将 JWT token 注册到 _tokens，使游戏操作（入座/下注等）能识别注册用户
+        tables._tokens[token] = {
+            "user_id": str(user.id),
+            "username": user.username or f"user_{user.id}",
+            "stack": int(user.coins_balance or 10000),
+        }
         return jsonify({
             "ok": True, "userId": user.id, "token": token,
             "userProfile": auth.user_to_profile(user),
@@ -177,11 +190,17 @@ def api_auth_login():
         data = request.get_json() or {}
         from services import auth
         user, err = auth.verify_user(db, data.get("username"), data.get("password"))
-        
+
         if err:
             return jsonify({"ok": False, "message": err}), 401
-        
+
         token = auth.encode_jwt(user.id)
+        # 将 JWT token 注册到 _tokens，使游戏操作（入座/下注等）能识别注册用户
+        tables._tokens[token] = {
+            "user_id": str(user.id),
+            "username": user.username or f"user_{user.id}",
+            "stack": int(user.coins_balance or 10000),
+        }
         return jsonify({
             "ok": True, "userId": user.id, "token": token,
             "userProfile": auth.user_to_profile(user),
@@ -218,15 +237,20 @@ def api_auth_me():
                 "coinsBalance": user.get("coinsBalance", user.get("stack", 0)),
             }
         })
-    from services.auth import get_user_by_id, user_to_profile
+    from services.auth import get_user_by_id, user_to_profile, get_user_stats
+    try:
+        uid = int(user["user_id"])
+    except (TypeError, ValueError):
+        return jsonify({"ok": True, "userProfile": {"userId": user["user_id"], "username": user.get("username"), "coinsBalance": 0}})
     db = SessionLocal()
     try:
-        db_user = get_user_by_id(db, user["user_id"])
+        db_user = get_user_by_id(db, uid)
+        if not db_user:
+            return jsonify({"ok": True, "userProfile": {"userId": user["user_id"], "username": user.get("username"), "coinsBalance": 0}})
+        stats = get_user_stats(db, uid)
+        return jsonify({"ok": True, "userProfile": user_to_profile(db_user, stats)})
     finally:
         db.close()
-    if not db_user:
-        return jsonify({"ok": True, "userProfile": {"userId": user["user_id"], "username": user.get("username"), "coinsBalance": 0}})
-    return jsonify({"ok": True, "userProfile": user_to_profile(db_user)})
 
 
 @app.route("/api/auth/logout", methods=["POST"])
@@ -234,13 +258,66 @@ def api_auth_logout():
     return jsonify({"ok": True})
 
 
+# 前端 UI 配置（主题、音效等）持久化，无 DB 时用内存存储，避免 404
+_ui_config_store = {}
+
+
+def _ui_config_token():
+    auth = request.headers.get("Authorization") or ""
+    if auth.startswith("Bearer "):
+        return auth[7:].strip()
+    return (request.get_json() or {}).get("token") or request.args.get("token") or ""
+
+
+@app.route("/api/users/me/ui-config", methods=["GET"])
+def api_users_me_ui_config_get():
+    token = _ui_config_token()
+    if not token:
+        return jsonify({}), 200
+    cfg = _ui_config_store.get(token, {})
+    return jsonify(cfg), 200
+
+
+@app.route("/api/users/me/ui-config", methods=["PUT"])
+def api_users_me_ui_config_put():
+    token = _ui_config_token()
+    if not token:
+        return jsonify({"ok": True}), 200
+    data = request.get_json() or {}
+    _ui_config_store[token] = {k: data[k] for k in ("theme", "uiVersion", "fontSize", "skin", "animationEnabled", "soundEnabled", "reducedMotion") if k in data}
+    return jsonify(_ui_config_store.get(token, {})), 200
+
+
 @app.route("/api/users/<int:user_id>")
 def api_user_profile(user_id):
-    from services.auth import get_user_by_id, user_to_profile
-    user = get_user_by_id(user_id)
-    if not user:
-        return jsonify({"ok": False, "message": "用户不存在"}), 404
-    return jsonify({"ok": True, "userProfile": user_to_profile(user)})
+    from services.auth import get_user_by_id, user_to_profile, get_user_stats
+    db = SessionLocal()
+    try:
+        user = get_user_by_id(db, user_id)
+        if not user:
+            return jsonify({"ok": False, "message": "用户不存在"}), 404
+        stats = get_user_stats(db, user_id)
+        return jsonify({"ok": True, "userProfile": user_to_profile(user, stats)})
+    finally:
+        db.close()
+
+
+# ---------- 通用认证 helper ----------
+def _current_user_id(require_db_user=False):
+    """从 Bearer JWT 或内存 token 解析 user_id；require_db_user=True 时只接受整数 uid。"""
+    token = _auth_token()
+    if not token:
+        return None, "未登录"
+    from services import auth as _auth
+    payload = _auth.decode_jwt(token)
+    if payload and "user_id" in payload:
+        return int(payload["user_id"]), None
+    user = tables.get_user(token)
+    if user:
+        if require_db_user:
+            return None, "需要账号登录"
+        return user.get("user_id"), None
+    return None, "未登录或 token 已过期"
 
 
 # ---------- 锦标赛（docs/requirements/12） ----------
@@ -271,18 +348,27 @@ def api_tournaments_list():
         out = []
         for t in lst:
             reg_count = tournaments.count_registrations(db, t.id)
+            starts_at = t.starts_at.isoformat() if t.starts_at else None
             out.append({
                 "id": t.id,
                 "name": t.name,
                 "type": t.type,
                 "status": t.status,
+                # snake_case（兼容旧模板）
                 "buy_in": t.buy_in,
                 "fee": t.fee,
                 "starting_stack": t.starting_stack,
                 "max_players": t.max_players,
                 "min_players_to_start": t.min_players_to_start,
                 "registered_count": reg_count,
-                "starts_at": t.starts_at.isoformat() if t.starts_at else None,
+                "starts_at": starts_at,
+                # camelCase（供 tournaments.js 使用）
+                "buyIn": t.buy_in,
+                "startingStack": t.starting_stack,
+                "maxPlayers": t.max_players,
+                "minPlayersToStart": t.min_players_to_start,
+                "registeredCount": reg_count,
+                "startsAt": starts_at,
             })
         return jsonify(out)
     finally:
@@ -295,9 +381,36 @@ def api_tournament_detail(tournament_id):
     db = SessionLocal()
     try:
         from services import tournaments
-        state = tournaments.get_tournament_state(db, tournament_id)
+        from database import TournamentRegistration
+        uid_for_state, _ = _current_user_id()
+        try:
+            uid_for_state = int(uid_for_state) if uid_for_state else None
+        except (ValueError, TypeError):
+            uid_for_state = None
+        state = tournaments.get_tournament_state(db, tournament_id, user_id=uid_for_state)
         if not state:
             return jsonify({"error": "赛事不存在"}), 404
+        # 附加 camelCase 别名
+        state["buyIn"] = state.get("buy_in")
+        state["startingStack"] = state.get("starting_stack")
+        state["maxPlayers"] = state.get("max_players")
+        state["registeredCount"] = state.get("registered_count")
+        state["startsAt"] = state.get("starts_at")
+        # 当前用户是否已报名
+        user_id, _ = _current_user_id()
+        state["myRegistration"] = False
+        if user_id:
+            try:
+                uid = int(user_id)
+                reg = db.query(TournamentRegistration).filter_by(
+                    tournament_id=tournament_id, user_id=uid
+                ).filter(
+                    TournamentRegistration.unregistered_at.is_(None),
+                    TournamentRegistration.refunded_at.is_(None),
+                ).first()
+                state["myRegistration"] = bool(reg)
+            except Exception:
+                pass
         return jsonify(state)
     finally:
         db.close()
@@ -337,6 +450,66 @@ def api_tournament_unregister(tournament_id):
         if not ok:
             return jsonify({"error": err or "取消失败"}), 400
         return jsonify({"ok": True})
+    finally:
+        db.close()
+
+
+@app.route("/api/admin/tournaments", methods=["POST"])
+def api_admin_create_tournament():
+    """管理员创建 SNG 或 MTT 赛事。"""
+    db = SessionLocal()
+    try:
+        from services import tournaments
+        data = request.get_json() or {}
+        type_ = data.get("type", "SNG")
+        name = data.get("name", "").strip()
+        if not name:
+            return jsonify({"error": "赛事名称不能为空"}), 400
+        buy_in = int(data.get("buy_in", 0))
+        fee = int(data.get("fee", 0))
+        starting_stack = int(data.get("starting_stack", 10000))
+        max_players = int(data.get("max_players", 9))
+        min_to_start = int(data.get("min_players_to_start", 2))
+        blind_levels = data.get("blind_levels") or []
+        payout_percents = data.get("payout_percents") or []
+        if type_ == "MTT":
+            starts_at_str = data.get("starts_at")
+            starts_at = None
+            if starts_at_str:
+                from datetime import datetime as _dt
+                try:
+                    starts_at = _dt.fromisoformat(starts_at_str.replace("Z", "+00:00"))
+                except Exception:
+                    pass
+            late_reg = int(data.get("late_reg_minutes", 30))
+            t = tournaments.create_mtt(
+                db, name, buy_in, fee, starting_stack,
+                max_players=max_players, min_to_start=min_to_start,
+                starts_at=starts_at, late_reg_minutes=late_reg,
+                blind_levels=blind_levels, payout_percents=payout_percents,
+            )
+        else:
+            t = tournaments.create_sng(
+                db, name, buy_in, fee, starting_stack,
+                max_players=max_players, min_to_start=min_to_start,
+                blind_levels=blind_levels, payout_percents=payout_percents,
+            )
+        return jsonify({"ok": True, "id": t.id, "name": t.name, "type": t.type})
+    finally:
+        db.close()
+
+
+@app.route("/api/admin/tournaments/<int:tournament_id>/start", methods=["POST"])
+def api_admin_start_tournament(tournament_id):
+    """管理员手动开赛（测试用），为真实玩家分配座位并补充机器人。"""
+    db = SessionLocal()
+    try:
+        from services import tournaments
+        import bots as _bots
+        ok, result = tournaments.start_tournament_game(db, tournament_id, tables, _bots)
+        if not ok:
+            return jsonify({"error": result}), 400
+        return jsonify({"ok": True, "game_table_id": result})
     finally:
         db.close()
 
@@ -914,6 +1087,7 @@ def api_table_emote(table_id):
     if seat < 0:
         return jsonify({"error": "您未在此桌"}), 403
     tables.set_emote(table_id, seat, data.get("emote", ""))
+    _broadcast_table_state(table_id)  # 广播给同桌所有玩家，使表情即时可见
     return jsonify(_game_state_for_seat(table_id, seat))
 
 
@@ -991,19 +1165,16 @@ def api_list_clubs():
 def api_create_club():
     """创建俱乐部"""
     from services import clubs
+    user_id, err = _current_user_id()
+    if err:
+        return jsonify({"error": err}), 401
     db = SessionLocal()
     try:
         data = request.get_json() or {}
-        token = data.get("token", "").strip()
-        user = tables.get_user(token)
-        if not user:
-            return jsonify({"error": "请先登录"}), 401
-        
         name = data.get("name", "").strip()
         if not name:
             return jsonify({"error": "俱乐部名称不能为空"}), 400
-        
-        club = clubs.create_club(db, name, user["user_id"], data.get("description"))
+        club = clubs.create_club(db, name, user_id, data.get("description"))
         return jsonify({
             "id": club.id,
             "name": club.name,
@@ -1023,14 +1194,13 @@ def api_get_club(club_id):
         club = clubs.get_club(db, club_id)
         if not club:
             return jsonify({"error": "俱乐部不存在"}), 404
-        
-        members = clubs.get_club_members(db, club_id)
+        members = clubs.get_club_members_with_names(db, club_id)
         return jsonify({
             "id": club.id,
             "name": club.name,
             "description": club.description,
             "owner_id": club.owner_id,
-            "members": [{"user_id": m.user_id, "role": m.role} for m in members]
+            "members": members,
         })
     finally:
         db.close()
@@ -1040,19 +1210,32 @@ def api_get_club(club_id):
 def api_join_club(club_id):
     """加入俱乐部"""
     from services import clubs
+    user_id, err = _current_user_id()
+    if err:
+        return jsonify({"error": err}), 401
     db = SessionLocal()
     try:
-        data = request.get_json() or {}
-        token = data.get("token", "").strip()
-        user = tables.get_user(token)
-        if not user:
-            return jsonify({"error": "请先登录"}), 401
-        
-        member, err = clubs.join_club(db, club_id, user["user_id"])
+        member, err = clubs.join_club(db, club_id, user_id)
         if err:
             return jsonify({"error": err}), 400
-        
         return jsonify({"message": "加入成功", "club_id": club_id})
+    finally:
+        db.close()
+
+
+@app.route("/api/clubs/<int:club_id>/leave", methods=["POST"])
+def api_leave_club(club_id):
+    """离开俱乐部"""
+    from services import clubs
+    user_id, err = _current_user_id()
+    if err:
+        return jsonify({"error": err}), 401
+    db = SessionLocal()
+    try:
+        ok, err = clubs.leave_club(db, club_id, user_id)
+        if not ok:
+            return jsonify({"error": err}), 400
+        return jsonify({"ok": True})
     finally:
         db.close()
 
@@ -1320,9 +1503,5 @@ def _ensure_default_table():
 
 if __name__ == "__main__":
     _ensure_default_table()
-    # 启动机器人后台线程
-    import bots
-    bots.start(socketio)
-    
-    socketio.run(app, host="0.0.0.0", port=8080, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=8080, debug=False, allow_unsafe_werkzeug=True)
 

@@ -1174,6 +1174,20 @@ body {
     background-size: 24px 24px, 100% 100%;
 }
 .player-meta { font-size: 0.8rem; color: var(--text-secondary); }
+.player-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin: 0 auto 6px;
+    flex-shrink: 0;
+    background: var(--bg-elevated) center/cover no-repeat;
+    border: 2px solid var(--border);
+}
+.player-avatar.avatar-default {
+    background-image: url(/static/avatar-default.svg);
+    background-size: contain;
+    background-color: var(--bg-elevated);
+}
 .player-meta strong { display: block; color: var(--text-primary); margin-bottom: 2px; }
 .chips-line, .bet-line { display: block; font-size: 0.75rem; }
 .badges { margin: 4px 0; }
@@ -1303,6 +1317,16 @@ body {
     margin-top: 12px;
 }
 .emote-label { font-size: 0.85rem; color: var(--text-muted); }
+.emote-pack-select {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.emote-bar-btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .emote-btn {
     width: 44px;
     height: 44px;
@@ -1720,12 +1744,13 @@ body {
 .profile-avatar {
     width: 80px; height: 80px;
     border-radius: 50%;
-    background: var(--bg-elevated);
+    background: var(--bg-elevated) url(/static/avatar-default.svg) center/cover no-repeat;
     border: 2px solid var(--border);
     display: flex; align-items: center; justify-content: center;
     font-size: 1.5rem; color: var(--text-muted);
     background-size: cover; background-position: center;
 }
+.profile-avatar[style*="background-image"] { background-color: transparent; }
 .profile-username { margin: 0 0 4px; font-size: 1.35rem; }
 .profile-id { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
 .profile-stats { display: grid; grid-template-columns: auto 1fr; gap: 8px 24px; margin: 0 0 16px; }

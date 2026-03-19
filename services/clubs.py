@@ -76,6 +76,29 @@ def set_member_role(db, club_id, user_id, new_role, operator_id):
     return True, None
 
 
+def leave_club(db, club_id, user_id):
+    """离开俱乐部（所有者不可离开）。"""
+    member = db.query(ClubMember).filter_by(club_id=club_id, user_id=user_id).first()
+    if not member:
+        return False, "不是俱乐部成员"
+    if member.role == "owner":
+        return False, "所有者不能离开俱乐部"
+    db.delete(member)
+    db.commit()
+    return True, None
+
+
+def get_club_members_with_names(db, club_id):
+    """获取成员列表，附带用户名。"""
+    rows = db.query(ClubMember, User).join(
+        User, User.id == ClubMember.user_id
+    ).filter(ClubMember.club_id == club_id).all()
+    return [
+        {"user_id": m.user_id, "username": u.username or f"用户{m.user_id}", "role": m.role}
+        for m, u in rows
+    ]
+
+
 def update_club_info(db, club_id, operator_id, name=None, description=None):
     """更新俱乐部信息（需要管理员权限）"""
     operator = db.query(ClubMember).filter_by(club_id=club_id, user_id=operator_id).first()

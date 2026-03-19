@@ -57,3 +57,9 @@
   - **触发**: 玩家发送聊天信息。
   - **Payload**:
     - `message`: (string)
+
+- `game:emote`
+  - **触发**: 玩家在牌桌发送表情（点击表情按钮）。
+  - **Payload**:
+    - `emote`: (string) 表情字符（如 emoji），服务端会截断至 8 字符。
+  - **服务端**: 写入该座位表情后，向**同桌所有玩家**广播 `game:state_update`（state 中含 `emotes: { "0": { "emote", "at" }, ... }`），实现投递与广播；REST `POST /api/tables/<id>/emote` 同样会触发该广播。

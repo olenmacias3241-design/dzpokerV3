@@ -31,7 +31,9 @@
 (function() {
     var clubId = {{ club_id }};
     var token = (window.authGetToken && window.authGetToken()) || localStorage.getItem('token') || '';
-    var apiBase = (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl('') : '';
+    function apiUrl(path) {
+        return (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl(path) : path;
+    }
     var loadingEl = document.getElementById('club-loading');
     var contentEl = document.getElementById('club-content');
     var errorEl = document.getElementById('club-error');
@@ -48,7 +50,7 @@
         if (data.members && data.members.length) {
             data.members.forEach(function(m) {
                 var li = document.createElement('li');
-                li.textContent = '用户 ' + m.user_id + ' (' + (m.role || 'member') + ')';
+                li.textContent = (m.username || '用户' + m.user_id) + ' (' + (m.role || 'member') + ')';
                 list.appendChild(li);
             });
         } else {
@@ -63,7 +65,7 @@
         errorText.textContent = msg || '加载失败';
     }
 
-    fetch(apiBase + '/api/clubs/' + clubId, {
+    fetch(apiUrl('/api/clubs/' + clubId), {
         headers: token ? { 'Authorization': 'Bearer ' + token } : {}
     })
         .then(function(r) { return r.json(); })
@@ -87,7 +89,7 @@
             }
             msgEl.textContent = '';
             joinBtn.disabled = true;
-            fetch(apiBase + '/api/clubs/' + clubId + '/join', {
+            fetch(apiUrl('/api/clubs/' + clubId + '/join'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
             })

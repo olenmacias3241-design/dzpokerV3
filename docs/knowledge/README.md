@@ -10,6 +10,7 @@
 |------|------|--------|
 | **[POKER_KNOWLEDGE_BASE.md](POKER_KNOWLEDGE_BASE.md)** | 德州扑克术语与策略：标准规则摘要、基本术语、游戏流程、位置与策略、数学基础、高级策略、锦标赛策略（ICM 等） | 改比牌/下注逻辑、做产品文案、查术语时 |
 | **[TEXAS_HOLDEM_PLAY_AND_RULES.md](TEXAS_HOLDEM_PLAY_AND_RULES.md)** | 标准德州扑克玩法与打牌需求：牌具、牌型、比牌、一局流程、座位与盲注、玩家行动与校验、下注轮、底池与边池、特殊局面 | 实现/裁判规则、写 HandEvaluator、边池与行动校验时 |
+| **[TABLE_UI_IMPLEMENTATION_NOTES.md](TABLE_UI_IMPLEMENTATION_NOTES.md)** | 牌桌前端实现笔记：座位 DOM 结构、.seat-main 与桌面定位约定、筹码/中央/边池防重叠、行动区结构 | 改牌桌布局、修重叠、加座位/底池元素时 |
 
 ---
 
@@ -83,6 +84,7 @@
 ### 在 Cursor 中引用（@）
 
 - 问规则/比牌/术语：`@docs/knowledge/POKER_KNOWLEDGE_BASE.md` 或 `@docs/knowledge/TEXAS_HOLDEM_PLAY_AND_RULES.md`
+- 问牌桌布局/座位/底池/边池实现：`@docs/knowledge/TABLE_UI_IMPLEMENTATION_NOTES.md`
 - 问接口与事件：`@docs/requirements/05_api_definitions.md`
 - 问游戏流程与状态机：`@docs/requirements/03_game_table_core_logic.md`
 - 问钱包登录与多链：`@docs/requirements/10_encrypted_wallet_user.md`

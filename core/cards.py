@@ -23,6 +23,7 @@ class Deck:
     """ Represents a deck of 52 playing cards. """
     def __init__(self):
         self.cards = [Card(rank, suit) for suit in SUITS for rank in RANKS]
+        assert len(self.cards) == 52 and len(set((c.rank, c.suit) for c in self.cards)) == 52, "deck must have 52 unique cards"
         self.shuffle()
 
     def shuffle(self):
@@ -30,15 +31,14 @@ class Deck:
         random.shuffle(self.cards)
 
     def draw(self, n=1):
-        """ Draws n cards from the top of the deck. """
+        """ Draws n cards from the top of the deck. Removes them from the deck so they cannot be drawn again. """
         if n > len(self.cards):
             raise ValueError("Cannot draw more cards than are in the deck.")
         if n == 1:
             return self.cards.pop()
-        
         drawn_cards = self.cards[-n:]
-        self.cards = self.cards[:-n]
-        drawn_cards.reverse() # Reverse to simulate popping one by one
+        del self.cards[-n:]
+        drawn_cards.reverse()
         return drawn_cards
 
     def __len__(self):

@@ -281,6 +281,29 @@ def find_next_player(game_state, last_actor_id):
     return None, True
 
 
+def skip_current_player_and_advance(game_state):
+    """
+    当当前行动者无筹码或已不在牌桌时，强制将其视为弃牌并推进到下一人，避免牌局卡住。
+    返回 (updated_game_state, True) 若执行了跳过，否则 (game_state, False)。
+    """
+    current_pid = game_state.get("current_player_id")
+    if not current_pid:
+        return game_state, False
+    player_state = game_state.get("players", {}).get(current_pid)
+    if not player_state:
+        return game_state, False
+    player_state["is_in_hand"] = False
+    player_state["is_active"] = False
+    player_state["last_action"] = "FOLD"
+    player_state["has_acted"] = True
+    next_pid, round_over = find_next_player(game_state, current_pid)
+    if round_over:
+        game_state = advance_to_next_stage(game_state)
+    else:
+        game_state["current_player_id"] = next_pid
+    return game_state, True
+
+
 def _compute_equity(game_state):
     """全员 All-in 时用蒙特卡洛估算胜率。返回 (leading_pid, {pid: equity})，无法计算时 (None, {})。"""
     players = game_state.get("players", {})
@@ -332,12 +355,12 @@ def _run_showdown(game_state):
     for pid, pstate in game_state["players"].items():
         players_for_pot[pid] = {
             "total_bet_this_hand": pstate.get("total_bet_this_hand", 0),
-            "is_folded": not pstate.get("is_in_hand", False) or not pstate.get("is_active", False),
+            "is_folded": not pstate.get("is_in_hand", False),
         }
     pots = pot_manager.calculate_side_pots(players_for_pot)
     hand_ranks = {}
     for pid, pstate in game_state["players"].items():
-        if pstate.get("is_in_hand") and pstate.get("is_active"):
+        if pstate.get("is_in_hand"):
             hole_cards = pstate.get("hole_cards", [])
             community = game_state.get("community_cards", [])
             if len(hole_cards) == 2 and len(community) >= 3:
@@ -381,6 +404,7 @@ def _deal_runout_and_showdown(game_state):
     for _ in range(need):
         if hasattr(deck, "draw") and len(deck.cards) > 0:
             game_state["community_cards"].append(deck.draw(1))
+    _assert_no_duplicate_cards(game_state)
     game_state["stage"] = GameStage.SHOWDOWN
     _run_showdown(game_state)
 
@@ -467,6 +491,8 @@ def advance_to_next_stage(game_state):
         river_card = game_state['deck'].draw(1)
         game_state['community_cards'].append(river_card)
         print(f"Dealt river: {river_card}")
+    if next_stage in (GameStage.FLOP, GameStage.TURN, GameStage.RIVER):
+        _assert_no_duplicate_cards(game_state)
     elif next_stage == GameStage.SHOWDOWN:
         print("All betting rounds are over. Proceeding to showdown.")
         _run_showdown(game_state)
@@ -499,7 +525,7 @@ def advance_to_next_stage(game_state):
     for pid, pstate in game_state['players'].items():
         players_for_pot[pid] = {
             'total_bet_this_hand': pstate.get('total_bet_this_hand', 0),
-            'is_folded': not pstate.get('is_in_hand', False) or not pstate.get('is_active', False)
+            'is_folded': not pstate.get('is_in_hand', False)
         }
     
     # 存储当前边池信息（供前端显示）
@@ -635,6 +661,33 @@ def run_ai_turns(game_state):
     return (game_state, actions)
 
 
+def _card_key(c):
+    """(rank, suit) for deduplication."""
+    if hasattr(c, 'rank') and hasattr(c, 'suit'):
+        return (c.rank, c.suit)
+    if isinstance(c, str) and len(c) >= 2:
+        return (c[0], c[1])
+    return None
+
+
+def _assert_no_duplicate_cards(game_state):
+    """若底牌+公共牌中出现重复牌则报错（一副牌不应出现两张相同牌）。"""
+    seen = set()
+    for c in game_state.get('community_cards', []):
+        k = _card_key(c)
+        if k and k in seen:
+            raise ValueError(f"Duplicate card in game state: {k}")
+        if k:
+            seen.add(k)
+    for pid, p in game_state.get('players', {}).items():
+        for c in p.get('hole_cards', []):
+            k = _card_key(c)
+            if k and k in seen:
+                raise ValueError(f"Duplicate card (player {pid} hole_cards): {k}")
+            if k:
+                seen.add(k)
+
+
 def start_new_hand(game_state):
     """
     新一局开始：洗牌、发底牌、下盲注、设定第一个行动者。
@@ -642,10 +695,11 @@ def start_new_hand(game_state):
     - dealer_pos：庄位在该列表中的下标；SB/BB/UTG 均由 dealer_pos 推导。
     """
     print("--- Starting a new hand ---")
+    for pid, p in game_state.get('players', {}).items():
+        p['hole_cards'] = []
     game_state['deck'] = Deck()
     game_state['community_cards'] = []
 
-    # 在局玩家列表（顺序 = 座位顺序，与 player_order 一致）
     active_player_ids = [pid for pid, p in game_state['players'].items() if p.get('is_in_hand')]
     num_players = len(active_player_ids)
 
@@ -655,6 +709,8 @@ def start_new_hand(game_state):
         game_state['players'][player_id]['total_bet_this_hand'] = 0
         game_state['players'][player_id]['is_all_in'] = False
         print(f"Dealt {hole_cards} to player {player_id}")
+
+    _assert_no_duplicate_cards(game_state)
 
     game_state['stage'] = GameStage.PREFLOP
 

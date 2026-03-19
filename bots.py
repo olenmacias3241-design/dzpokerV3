@@ -11,16 +11,17 @@ import random
 import uuid
 
 import tables
-from core.game_logic import GameStage
+from core.game_logic import GameStage, skip_current_player_and_advance
 
 _socketio = None
 _lock = threading.Lock()
 # 全局串行：同一时刻只允许一个机器人行动（含思考时间），保证按次序下注
 _bot_action_lock = threading.Lock()
 
-BOT_THINK_MIN = 2.0   # 每个机器人随机 2～4 秒，便于看出「一个一个」轮询
-BOT_THINK_MAX = 4.0
-NEW_ROUND_DELAY = 3.0 # 新一局开始前的等待时间（秒）
+# 思考时间短于前端倒计时(5秒)，避免「轮到机器人倒计时走完还没动」的卡住感；保留随机感
+BOT_THINK_MIN = 0.6
+BOT_THINK_MAX = 1.8
+NEW_ROUND_DELAY = 6.0 # 新一局开始前的等待时间（秒）
 
 
 # ──────────────────────────────────────────────
@@ -28,8 +29,11 @@ NEW_ROUND_DELAY = 3.0 # 新一局开始前的等待时间（秒）
 # ──────────────────────────────────────────────
 
 def _is_bot(user_id):
+    if user_id is None:
+        return False
+    uid = str(user_id)
     for u in tables._tokens.values():
-        if u["user_id"] == user_id and u.get("is_bot"):
+        if str(u.get("user_id") or "") == uid and u.get("is_bot"):
             return True
     return False
 
@@ -171,6 +175,8 @@ def _broadcast(table_id):
     if not t or not t.get("game"):
         return
     wrapper = t["game"]
+    # 每次广播前同步真人 sid（开局会新建 wrapper，避免 sid 未绑定导致收不到推送）
+    _sync_real_player_sids(table_id)
     emotes = t.get("emotes")
     # 对每个在线真人玩家发送含私牌的状态（每人只发一次，避免重复推送导致界面断片）
     for p in wrapper.players:
@@ -184,10 +190,16 @@ def _broadcast(table_id):
 # ──────────────────────────────────────────────
 
 def _bot_loop():
-    print("[Bot] 后台循环开始运行")
+    print("[Bot] 后台轮询已启动（同进程内轮询下注并广播，无需额外 HTTP 服务）")
+    print("[Bot] >>> 机器人相关日志在【运行 python3 app.py 的终端】里查看，不在浏览器控制台 <<<")
+    _last_heartbeat = time.time()
     while True:
         time.sleep(0.5)
         try:
+            if time.time() - _last_heartbeat > 20.0:
+                _last_heartbeat = time.time()
+                playing = sum(1 for t in tables.TABLES.values() if t.get("status") == "playing")
+                print(f"[Bot] 心跳: 轮询运行中, 进行中牌桌数={playing}")
             for tid, table in list(tables.TABLES.items()):
                 if table.get("status") != "playing":
                     continue
@@ -208,6 +220,59 @@ def _bot_loop():
                     def _start_new(tid=tid, t=table, w=wrapper):
                         time.sleep(NEW_ROUND_DELAY)
                         try:
+                            # 新局开始前，确保上一局筹码已写入 DB
+                            if w.state.get("stage") == GameStage.ENDED:
+                                try:
+                                    from database import SessionLocal as _SL
+                                    _db = _SL()
+                                    try:
+                                        tables.sync_stacks_to_db(_db, tid)
+                                        _db.commit()
+                                    except Exception:
+                                        try:
+                                            _db.rollback()
+                                        except Exception:
+                                            pass
+                                    finally:
+                                        _db.close()
+                                except Exception:
+                                    pass
+                            tables.remove_busted_players(tid)
+                            # 锦标赛：检查淘汰和结束
+                            if t.get("tournament_id"):
+                                try:
+                                    from database import SessionLocal as _SL
+                                    from services import tournaments as _tourn
+                                    _db = _SL()
+                                    try:
+                                        _tourn.post_hand_tournament_hook(_db, tid, tables)
+                                        _db.commit()
+                                    except Exception as _e:
+                                        print(f"[Tournament] hook error: {_e}")
+                                        try:
+                                            _db.rollback()
+                                        except Exception:
+                                            pass
+                                    finally:
+                                        _db.close()
+                                except Exception:
+                                    pass
+                            # 若赛事已结束则不开新局
+                            if t.get("tournament_id"):
+                                try:
+                                    from database import SessionLocal as _SL2
+                                    from services import tournaments as _tourn2
+                                    _db2 = _SL2()
+                                    try:
+                                        _tr = _tourn2.get_tournament(_db2, t["tournament_id"])
+                                        if _tr and _tr.status == "Finished":
+                                            print(f"[Tournament {t['tournament_id']}] 赛事结束，不再开新局")
+                                            t["_bot_new_round_pending"] = False
+                                            return
+                                    finally:
+                                        _db2.close()
+                                except Exception:
+                                    pass
                             with _lock:
                                 w.start_new_round()
                                 t["_bot_new_round_pending"] = False
@@ -228,6 +293,24 @@ def _bot_loop():
                     continue
                 is_bot_turn = _is_bot(current_pid) or gs.get("players", {}).get(current_pid, {}).get("is_bot")
                 if not is_bot_turn:
+                    # 轮到真人：若无筹码或已不在牌桌，则跳过该玩家，避免牌局卡住
+                    player_state = gs.get("players", {}).get(current_pid, {})
+                    stack = player_state.get("stack", 0)
+                    seat = next(
+                        (i for i, pid in enumerate(wrapper._seat_to_pid) if pid == current_pid),
+                        None,
+                    )
+                    if stack <= 0 or seat is None:
+                        with _lock:
+                            gs = wrapper.state
+                            if gs.get("current_player_id") != current_pid:
+                                continue
+                            new_state, did_skip = skip_current_player_and_advance(gs)
+                            if did_skip:
+                                wrapper.state = new_state
+                                print(f"[Bot] 牌桌 {tid} 跳过无筹码/不在桌的玩家 {current_pid}，已推进到下一人")
+                                _broadcast(tid)
+                        continue
                     continue
 
                 # 找到座位
@@ -238,22 +321,26 @@ def _bot_loop():
                 if seat is None:
                     continue
 
-                # 全局串行：同一时刻只允许一个机器人行动（含思考时间），保证按次序
+                bot_name = tables._tokens.get(
+                    next((tok for tok, u in tables._tokens.items() if str(u.get("user_id") or "") == str(current_pid)), ""),
+                    {}
+                ).get("username", current_pid)
+                print(f"[Bot] 牌桌 {tid} 轮到机器人 {bot_name} (seat={seat})，开始行动")
+
+                # 全局串行：同一时刻只允许一个机器人执行 process_action；思考时间在锁外，避免长时间占锁导致「卡住」
                 with _bot_action_lock:
                     gs = wrapper.state
                     if gs.get("current_player_id") != current_pid:
                         continue
-                    bot_name = tables._tokens.get(
-                        next((tok for tok, u in tables._tokens.items() if u["user_id"] == current_pid), ""),
-                        {}
-                    ).get("username", current_pid)
-                    print(f"[Bot] 牌桌 {tid}, 座位 {seat}, {bot_name} 开始思考...")
                     with _lock:
                         if gs.get("current_player_id") != current_pid:
                             continue
                         action, amount = _decide(gs)
-                    think_time = _think_time_for_action(action, amount)
-                    time.sleep(think_time)
+                # 思考时间在锁外：不阻塞其他桌，且总时长短于前端 5 秒倒计时
+                think_time = _think_time_for_action(action, amount)
+                print(f"[Bot] 牌桌 {tid}, {bot_name} 思考 {think_time:.1f}s 后行动...")
+                time.sleep(think_time)
+                with _bot_action_lock:
                     with _lock:
                         if wrapper.state.get("current_player_id") != current_pid:
                             print(f"[Bot] {bot_name} 思考期间状态已改变，跳过")
@@ -276,7 +363,7 @@ def _bot_loop():
                             else:
                                 if db:
                                     db.rollback()
-                                print(f"[Bot] {bot_name} 行动失败: {err}, 尝试兜底策略")
+                                print(f"[Bot] {bot_name} 行动失败: {err}, 尝试兜底 check/call")
                                 fallback = "check" if gs.get("amount_to_call", 0) == 0 else "call"
                                 ok2, err2 = tables.process_action(db, tid, seat, fallback, 0)
                                 if ok2:
@@ -286,7 +373,16 @@ def _bot_loop():
                                 else:
                                     if db:
                                         db.rollback()
-                                    print(f"[Bot] {bot_name} 兜底也失败: {err2}")
+                                    print(f"[Bot] {bot_name} 兜底失败: {err2}, 最后尝试 check")
+                                    ok3, err3 = tables.process_action(db, tid, seat, "check", 0)
+                                    if ok3:
+                                        if db:
+                                            db.commit()
+                                        print(f"[Bot] {bot_name} 最后 check 成功")
+                                    else:
+                                        if db:
+                                            db.rollback()
+                                        print(f"[Bot] 卡住: {bot_name} 无法行动 (err={err}, fallback={err2}, check={err3})")
                         except Exception as e:
                             if db:
                                 try:
@@ -300,7 +396,6 @@ def _bot_loop():
                                     db.close()
                                 except Exception:
                                     pass
-                    # 广播最新状态（含 current_player_id = 下一个行动者），确保轮到下一个角色
                     next_pid = wrapper.state.get("current_player_id") if wrapper else None
                     if next_pid:
                         next_name = tables._tokens.get(
@@ -309,10 +404,8 @@ def _bot_loop():
                         ).get("username", next_pid)
                         print(f"[Bot] 牌桌 {tid} 下一个行动者: {next_name} ({next_pid})")
                     _broadcast(tid)
-                    # 给前端一点时间收到 state 再继续下一轮，避免「一起过」的错觉
-                    time.sleep(0.4)
-                    # 每轮只处理一个机器人，下一轮再轮询，避免多人「一起过」
-                    break
+                time.sleep(0.3)
+                break
 
         except Exception as e:
             print(f"[Bot] loop error: {e}")
@@ -459,4 +552,4 @@ def start(socketio_instance):
     _socketio = socketio_instance
     t = threading.Thread(target=_bot_loop, daemon=True)
     t.start()
-    print("[Bot] 后台线程已启动")
+    print("[Bot] 后台线程已启动（请在本终端查看 [Bot] 开头的日志，不要看浏览器控制台）")

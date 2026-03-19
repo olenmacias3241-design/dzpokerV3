@@ -11,6 +11,9 @@
 </div>
 
 <div class="game-area" style="display: none;">
+    <div class="game-top-bar">
+        <button type="button" id="fill-bots-btn" class="fill-bots-btn" style="display: none;" title="自动填满空位并开局">拉机器人</button>
+    </div>
     <div class="game-main">
         <div id="sit-at-table-wrap" class="panel sit-at-table-panel" style="display: none;">
             <h2 id="sit-at-table-title">选择座位</h2>
@@ -31,10 +34,13 @@
                     <div id="community-cards-display"></div>
                 </div>
                 <div class="pot">
-                    <div class="pot-chips-wrap" id="pot-chips-wrap" aria-hidden="true">
-                        <div class="pot-chips" id="pot-chips"></div>
+                    <div class="pot-row pot-row-main">
+                        <div class="pot-chips-wrap" id="pot-chips-wrap" aria-hidden="true">
+                            <div class="pot-chips" id="pot-chips"></div>
+                        </div>
+                        <span class="pot-label">主池</span> <span id="pot-display">0</span>
                     </div>
-                    <span class="pot-label">主池</span> <span id="pot-display">0</span>
+                    <p id="street-bet-call-display" class="street-bet-call" style="display: none;"></p>
                     <p id="side-pots-display" class="side-pots" style="display: none;"></p>
                 </div>
                 <div class="last-action">
@@ -50,10 +56,10 @@
                 <span id="turn-countdown-text" class="turn-countdown-text">5</span>
             </div>
         </div>
+    </div><!-- end .game-main -->
 
     <div class="actions">
         <button type="button" id="start-game-btn">开始对局</button>
-        <button type="button" id="fill-bots-btn" class="leave-seat-btn" style="display: none;" title="自动填满空位并开局">拉机器人</button>
         <div id="deal-controls" class="deal-controls" style="display: none;">
             <button type="button" id="deal-next-btn" class="deal-next-btn">发翻牌</button>
         </div>
@@ -73,6 +79,7 @@
                 <button type="button" id="call-btn" style="display: none;">跟注</button>
                 <button type="button" id="bet-btn">下注</button>
                 <button type="button" id="all-in-btn">All-in</button>
+                <button type="button" id="auto-pilot-btn" class="auto-pilot-btn" title="开启后轮到你会自动过牌/跟注，否则弃牌">托管</button>
             </div>
             <div class="bet-controls">
                 <input type="number" id="bet-amount" placeholder="金额" min="0">
@@ -98,10 +105,8 @@
             </div>
             <div class="emote-bar" aria-label="表情">
                 <span class="emote-label">表情</span>
-                <button type="button" class="emote-btn" data-emote="👍">👍</button>
-                <button type="button" class="emote-btn" data-emote="😂">😂</button>
-                <button type="button" class="emote-btn" data-emote="😎">😎</button>
-                <button type="button" class="emote-btn" data-emote="🙏">🙏</button>
+                <select id="emote-pack-select" class="emote-pack-select" aria-label="表情包"></select>
+                <div id="emote-bar-btns" class="emote-bar-btns"></div>
             </div>
         </div>
     </div>

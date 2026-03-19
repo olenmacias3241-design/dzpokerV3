@@ -37,53 +37,74 @@
     var contentEl = document.getElementById('lobby-content');
     var errorTextEl = document.getElementById('lobby-error-text');
 
-    fetch(apiBase + '/api/tournaments/' + tournamentId, { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
-        .then(function(r) {
-            if (r.status === 404) {
-                errorTextEl.textContent = '赛事不存在或锦标赛接口即将上线。';
+    function loadLobby() {
+        fetch(apiBase + '/api/tournaments/' + tournamentId, { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
+            .then(function(r) {
+                if (r.status === 404) {
+                    errorTextEl.textContent = '赛事不存在。';
+                    loadingEl.style.display = 'none';
+                    errorEl.style.display = 'block';
+                    return null;
+                }
+                return r.json();
+            })
+            .then(function(data) {
+                if (!data) return;
+                if (data.error) {
+                    errorTextEl.textContent = data.error;
+                    loadingEl.style.display = 'none';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+                document.getElementById('lobby-tournament-name').textContent = data.name || '赛事';
+                var levelIdx = data.current_level_index != null ? data.current_level_index : 0;
+                document.getElementById('lobby-level').textContent = levelIdx + 1;
+                var playersLeft = data.players_remaining != null ? data.players_remaining : (data.registered_count || '—');
+                document.getElementById('lobby-players-left').textContent = playersLeft;
+                document.getElementById('lobby-level-time').textContent = (data.current_level && data.current_level.duration_minutes) ? data.current_level.duration_minutes + ' 分钟' : '—';
+
+                // 我的桌信息
+                var myTableEl = document.getElementById('lobby-my-table');
+                if (data.myGameTableId) {
+                    myTableEl.innerHTML = '您的座位：桌 ' + (data.myTableNumber || 1) +
+                        (data.mySeat != null ? ' · 座位 ' + (data.mySeat + 1) : '') +
+                        ' <a href="/?table=' + data.myGameTableId + '" class="btn btn-primary" style="margin-left:12px">进入牌桌</a>';
+                    myTableEl.style.display = 'block';
+                } else if (data.status === 'Running') {
+                    myTableEl.textContent = '您不在本赛事牌桌中（可能已淘汰）';
+                    myTableEl.style.display = 'block';
+                }
+
+                // 牌桌列表
+                var tblList = data.game_tables || [];
+                var listEl = document.getElementById('lobby-tables-list');
+                listEl.innerHTML = '';
+                if (tblList.length === 0) {
+                    listEl.innerHTML = '<p class="muted">暂无牌桌数据（赛事可能未开赛或已结束）</p>';
+                } else {
+                    tblList.forEach(function(t) {
+                        var div = document.createElement('div');
+                        div.className = 'lobby-table-card';
+                        var link = t.game_table_id ? '<a href="/?table=' + t.game_table_id + '">观战</a>' : '';
+                        div.innerHTML = '桌 ' + t.table_number + ' · ' + (t.players_count || 0) + ' 人 ' + link;
+                        listEl.appendChild(div);
+                    });
+                }
+
+                // 运行中则每 10 秒刷新
+                if (data.status === 'Running' || data.status === 'Registration') {
+                    setTimeout(loadLobby, 10000);
+                }
+            })
+            .catch(function() {
+                errorTextEl.textContent = '网络错误';
                 loadingEl.style.display = 'none';
                 errorEl.style.display = 'block';
-                return null;
-            }
-            return r.json();
-        })
-        .then(function(data) {
-            if (!data) return;
-            if (data.error) {
-                errorTextEl.textContent = data.error;
-                loadingEl.style.display = 'none';
-                errorEl.style.display = 'block';
-                return;
-            }
-            loadingEl.style.display = 'none';
-            contentEl.style.display = 'block';
-            document.getElementById('lobby-tournament-name').textContent = data.name || '赛事';
-            document.getElementById('lobby-level').textContent = (data.currentLevelIndex != null ? data.currentLevelIndex + 1 : 1);
-            document.getElementById('lobby-players-left').textContent = data.playersLeft != null ? data.playersLeft : '—';
-            document.getElementById('lobby-level-time').textContent = data.levelTimeLeft != null ? data.levelTimeLeft + ' 分钟' : '—';
-            var tables = data.tables || [];
-            var listEl = document.getElementById('lobby-tables-list');
-            listEl.innerHTML = '';
-            if (tables.length === 0) {
-                listEl.innerHTML = '<p class="muted">暂无牌桌数据（赛事可能未开赛或已结束）</p>';
-            } else {
-                tables.forEach(function(t) {
-                    var div = document.createElement('div');
-                    div.className = 'lobby-table-card';
-                    div.innerHTML = '桌 ' + (t.tableNumber || t.id) + ' · ' + (t.playersCount || 0) + ' 人';
-                    listEl.appendChild(div);
-                });
-            }
-            if (data.myTableNumber != null) {
-                document.getElementById('lobby-my-table').textContent = '您的座位：桌 ' + data.myTableNumber + (data.mySeat != null ? ' 座位 ' + (data.mySeat + 1) : '');
-                document.getElementById('lobby-my-table').style.display = 'block';
-            }
-        })
-        .catch(function() {
-            errorTextEl.textContent = '网络错误';
-            loadingEl.style.display = 'none';
-            errorEl.style.display = 'block';
-        });
+            });
+    }
+    loadLobby();
 })();
 </script>
 {% endblock %}

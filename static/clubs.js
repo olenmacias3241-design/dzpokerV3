@@ -2,7 +2,9 @@
  * 俱乐部列表页：拉取列表、创建俱乐部
  */
 (function() {
-    var apiBase = (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl('') : '';
+    function apiUrl(path) {
+        return (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl(path) : path;
+    }
     var token = (window.authGetToken && window.authGetToken()) || localStorage.getItem('token') || '';
 
     var listEl = document.getElementById('clubs-list');
@@ -39,7 +41,7 @@
         loadingEl.style.display = 'block';
         emptyEl.style.display = 'none';
         listEl.innerHTML = '';
-        fetch(apiBase + '/api/clubs', { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
+        fetch(apiUrl('/api/clubs'), { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var arr = data.clubs || [];
@@ -81,7 +83,7 @@
                 return;
             }
             if (msgEl) msgEl.textContent = '';
-            fetch(apiBase + '/api/clubs', {
+            fetch(apiUrl('/api/clubs'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({ name: name, description: desc || undefined })

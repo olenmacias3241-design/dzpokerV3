@@ -4,7 +4,9 @@
  */
 (function() {
     var tournamentId = window.TOURNAMENT_ID || 0;
-    var apiBase = (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl('') : '';
+    function apiUrl(path) {
+        return (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl(path) : path;
+    }
     var token = (window.authGetToken && window.authGetToken()) || localStorage.getItem('token') || '';
 
     var loadingEl = document.getElementById('tournament-loading');
@@ -115,7 +117,7 @@
         msgEl.className = 'form-msg' + (isError ? ' error' : ' success');
     }
 
-    fetch(apiBase + '/api/tournaments/' + tournamentId, { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
+    fetch(apiUrl('/api/tournaments/' + tournamentId), { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
         .then(function(r) {
             if (r.status === 404) {
                 showError('赛事不存在或锦标赛接口即将上线。');
@@ -140,7 +142,7 @@
             if (!token) { setMsg('请先登录', true); return; }
             setMsg('');
             registerBtn.disabled = true;
-            fetch(apiBase + '/api/tournaments/' + tournamentId + '/register', {
+            fetch(apiUrl('/api/tournaments/' + tournamentId + '/register'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
             })
@@ -164,7 +166,7 @@
             if (!token) return;
             setMsg('');
             unregisterBtn.disabled = true;
-            fetch(apiBase + '/api/tournaments/' + tournamentId + '/unregister', {
+            fetch(apiUrl('/api/tournaments/' + tournamentId + '/unregister'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
             })

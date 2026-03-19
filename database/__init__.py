@@ -158,6 +158,18 @@ class HandAction(Base):
     user = relationship("User")
 
 
+class HandParticipant(Base):
+    """一手牌中的参与者：底牌与输赢金额（用于牌谱与统计）。仅持久化注册用户。"""
+    __tablename__ = "hand_participants"
+    hand_id = Column(Integer(unsigned=True), ForeignKey("hands.id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(Integer(unsigned=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    seat_number = Column(Integer, nullable=False)
+    hole_cards = Column(String(32), nullable=False)  # e.g. "Ah,Kd"
+    win_amount = Column(BigInteger, nullable=False, default=0)  # 赢为正，输为 0 或负
+    hand = relationship("Hand", backref="participants")
+    user = relationship("User")
+
+
 # ---------- 锦标赛（docs/requirements/12） ----------
 class Tournament(Base):
     __tablename__ = "tournaments"

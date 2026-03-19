@@ -66,6 +66,9 @@
             if (p.avatarUrl) {
                 avatarEl.style.backgroundImage = 'url(' + p.avatarUrl + ')';
                 avatarEl.textContent = '';
+            } else {
+                avatarEl.style.backgroundImage = '';
+                avatarEl.textContent = '';
             }
         })
         .catch(function() {

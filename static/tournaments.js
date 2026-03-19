@@ -3,7 +3,9 @@
  * API: GET /api/tournaments（后端未实现时 404 显示「即将上线」）
  */
 (function() {
-    var apiBase = (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl('') : '';
+    function apiUrl(path) {
+        return (window.DZPOKER && window.DZPOKER.apiUrl) ? window.DZPOKER.apiUrl(path) : path;
+    }
     var token = (window.authGetToken && window.authGetToken()) || localStorage.getItem('token') || '';
     var currentFilter = 'all';
     var allTournaments = [];
@@ -54,7 +56,7 @@
         loadingEl.style.display = 'block';
         emptyEl.style.display = 'none';
         if (errorEl) errorEl.style.display = 'none';
-        fetch(apiBase + '/api/tournaments', { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
+        fetch(apiUrl('/api/tournaments'), { headers: token ? { 'Authorization': 'Bearer ' + token } : {} })
             .then(function(r) {
                 if (r.status === 404) {
                     allTournaments = [];
@@ -73,7 +75,7 @@
                     errorEl.style.display = 'block';
                     return;
                 }
-                allTournaments = data.tournaments || [];
+                allTournaments = Array.isArray(data) ? data : (data.tournaments || []);
                 renderList();
             })
             .catch(function() {
