@@ -2,11 +2,31 @@
 {% block title %}商城 · DZPoker{% endblock %}
 {% block content %}
 <div class="mall-page">
-    <h1 class="page-title">商城</h1>
-    <figure class="page-ui-mockup" aria-label="商城界面示意">
-        <img src="/static/UI_pic/ui-mockup-mall.png" alt="商城界面示意" />
-        <figcaption>商城界面示意</figcaption>
-    </figure>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Official Store</p>
+        <h1 class="stitch-title-xl">黑曜石之夜商城</h1>
+        <p class="stitch-subtitle">围绕 Stitch 生成的 Boutique 版式重构本地商城页，突出新品主题、分类切换、商品网格与 VIP 特权区，同时继续由 `mall.js` 动态渲染商品。</p>
+        <div class="tournament-actions">
+            <button type="button" class="btn btn-primary">立即解锁</button>
+        </div>
+    </section>
+    <div class="stitch-grid-3" style="margin-bottom:24px;">
+        <div class="stitch-card" style="padding:18px;">
+            <p class="stitch-eyebrow">新品主题</p>
+            <strong>Obsidian Night</strong>
+            <p class="stitch-muted">主打黑曜石牌桌、金色边框与暗夜俱乐部氛围。</p>
+        </div>
+        <div class="stitch-card" style="padding:18px;">
+            <p class="stitch-eyebrow">分类扩展</p>
+            <strong>主题 / 卡背 / 表情 / 筹码</strong>
+            <p class="stitch-muted">与 Stitch 商城分类保持一致，方便后续继续补商品。</p>
+        </div>
+        <div class="stitch-card" style="padding:18px;">
+            <p class="stitch-eyebrow">会员权益</p>
+            <strong>VIP 全场 8.5 折</strong>
+            <p class="stitch-muted">保留底部权益位，后续可直接接会员接口与运营活动。</p>
+        </div>
+    </div>
     <div class="panel mall-panel">
         <h2>分类</h2>
         <div class="mall-categories" id="mall-categories">
@@ -14,14 +34,20 @@
             <button type="button" class="cat-btn" data-cat="table_theme">牌桌主题</button>
             <button type="button" class="cat-btn" data-cat="card_back">卡牌背面</button>
             <button type="button" class="cat-btn" data-cat="emote">表情包</button>
+            <button type="button" class="cat-btn" data-cat="chip_skin">筹码皮肤</button>
         </div>
     </div>
 
     <div class="panel mall-panel">
         <h2>商品</h2>
+        <p class="stitch-muted">当前商品区保持 JS 渲染入口，Stitch 导出中的大卡新品、卡背、表情包与筹码礼包都可以直接映射到这里。</p>
         <div class="product-grid" id="product-grid">
             <!-- 由 JS 填充 -->
         </div>
+    </div>
+    <div class="panel mall-panel">
+        <h2>VIP 会员</h2>
+        <p class="stitch-muted">成为 VIP 俱乐部会员，解锁更多专属外观、头像框与高额桌礼遇，并享受商城商品 8.5 折、每日免费筹码与专属活动邀请。</p>
     </div>
 </div>
 {% endblock %}

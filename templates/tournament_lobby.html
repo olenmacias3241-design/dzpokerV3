@@ -2,7 +2,16 @@
 {% block title %}赛事大厅 · DZPoker{% endblock %}
 {% block content %}
 <div class="tournament-lobby-page">
-    <h1 class="page-title">赛事大厅</h1>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Tournament Hub</p>
+        <h1 class="stitch-title-xl">赛事大厅</h1>
+        <p class="stitch-subtitle">参考 Stitch 生成的赛事中控页，展示当前级别、剩余人数、下一盲注与我的牌桌信息，同时保留自动刷新与跳转。</p>
+    </section>
+    <div class="stitch-grid-3" style="margin-bottom:24px;">
+        <div class="blind-level-row">当前盲注 <span id="lobby-current-blinds">—</span></div>
+        <div class="blind-level-row">剩余人数 <span id="lobby-players-left-summary">—</span></div>
+        <div class="blind-level-row">我的桌号 <span id="lobby-my-table-summary">—</span></div>
+    </div>
     <div id="lobby-loading" class="panel">加载中…</div>
     <div id="lobby-error" class="panel panel-error" style="display: none;">
         <p id="lobby-error-text"></p>
@@ -64,17 +73,26 @@
                 var playersLeft = data.players_remaining != null ? data.players_remaining : (data.registered_count || '—');
                 document.getElementById('lobby-players-left').textContent = playersLeft;
                 document.getElementById('lobby-level-time').textContent = (data.current_level && data.current_level.duration_minutes) ? data.current_level.duration_minutes + ' 分钟' : '—';
+                var blindsText = (data.current_level && data.current_level.small_blind != null)
+                    ? (data.current_level.small_blind + '/' + data.current_level.big_blind + (data.current_level.ante ? ' Ante ' + data.current_level.ante : ''))
+                    : '—';
+                document.getElementById('lobby-current-blinds').textContent = blindsText;
+                document.getElementById('lobby-players-left-summary').textContent = playersLeft;
 
                 // 我的桌信息
                 var myTableEl = document.getElementById('lobby-my-table');
                 if (data.myGameTableId) {
+                    document.getElementById('lobby-my-table-summary').textContent = '桌 ' + (data.myTableNumber || 1);
                     myTableEl.innerHTML = '您的座位：桌 ' + (data.myTableNumber || 1) +
                         (data.mySeat != null ? ' · 座位 ' + (data.mySeat + 1) : '') +
                         ' <a href="/?table=' + data.myGameTableId + '" class="btn btn-primary" style="margin-left:12px">进入牌桌</a>';
                     myTableEl.style.display = 'block';
                 } else if (data.status === 'Running') {
+                    document.getElementById('lobby-my-table-summary').textContent = '未分配';
                     myTableEl.textContent = '您不在本赛事牌桌中（可能已淘汰）';
                     myTableEl.style.display = 'block';
+                } else {
+                    document.getElementById('lobby-my-table-summary').textContent = '待开赛';
                 }
 
                 // 牌桌列表

@@ -32,6 +32,7 @@
                 '<div class="product-img">' + p.icon + '</div>' +
                 '<div class="product-info">' +
                 '<div class="product-name">' + escapeHtml(p.name) + '</div>' +
+                '<div class="product-desc">' + escapeHtml(p.desc || '') + '</div>' +
                 '<div class="product-price">' + priceText + '</div>' +
                 '<button type="button" class="btn btn-amber product-buy" data-id="' + p.id + '">' +
                 (p.price === 0 ? '使用' : '购买') +

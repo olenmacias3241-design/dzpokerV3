@@ -2,34 +2,58 @@
 {% block title %}注册 · DZPoker{% endblock %}
 {% block content %}
 <div class="auth-page-with-mockup">
-<div class="auth-box panel">
-    <h1>注册</h1>
-    <form id="register-form">
-        <div class="form-group">
-            <label for="username">用户名</label>
-            <input type="text" id="username" name="username" placeholder="4–16 位字母或数字（仅英文、数字）" autocomplete="username" required>
-            <small class="form-hint">仅允许 a-z、A-Z、0-9，不能有空格或中文</small>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Join The Club</p>
+        <h1 class="stitch-title-xl">创建你的扑克身份</h1>
+        <p class="stitch-subtitle">加入 DZPoker，开启你的私人俱乐部席位。注册后即可进入高额桌、赛事与外观系统。</p>
+        <div class="stitch-grid-3">
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">奖励</p>
+                <strong>注册赠送筹码</strong>
+                <p class="stitch-muted">注册成功自动发放起始筹码。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">身份</p>
+                <strong>唯一用户名</strong>
+                <p class="stitch-muted">仅英文与数字，便于跨端识别。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">安全</p>
+                <strong>邮箱可选</strong>
+                <p class="stitch-muted">用于后续找回密码能力。</p>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="password">密码</label>
-            <input type="password" id="password" name="password" placeholder="6–20 位" autocomplete="new-password" required>
-            <small class="form-hint">长度 6–20 位</small>
+        <figure class="page-ui-mockup" aria-label="注册页界面示意">
+            <img src="/static/UI_pic/ui-mockup-register.png" alt="注册页界面示意" />
+            <figcaption>注册页示意</figcaption>
+        </figure>
+    </section>
+    <div class="auth-box panel">
+        <p class="stitch-kicker">Register</p>
+        <h2 class="stitch-title-lg">注册账号</h2>
+        <form id="register-form">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" placeholder="4–16 位字母或数字（仅英文、数字）" autocomplete="username" required>
+                <small class="form-hint">仅允许 a-z、A-Z、0-9，不能有空格或中文</small>
+            </div>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" placeholder="6–20 位" autocomplete="new-password" required>
+                <small class="form-hint">长度 6–20 位</small>
+            </div>
+            <div class="form-group">
+                <label for="email">邮箱（选填）</label>
+                <input type="email" id="email" name="email" placeholder="用于找回密码">
+            </div>
+            <p class="stitch-muted" style="margin:0 0 14px;">注册成功后将自动登录并跳转到大厅。</p>
+            <button type="submit" class="btn btn-primary">注册</button>
+            <div class="auth-msg" id="auth-msg"></div>
+        </form>
+        <div class="auth-footer">
+            已有账号？<a href="/login">去登录</a>
         </div>
-        <div class="form-group">
-            <label for="email">邮箱（选填）</label>
-            <input type="email" id="email" name="email" placeholder="用于找回密码">
-        </div>
-        <button type="submit" class="btn btn-primary">注册</button>
-        <div class="auth-msg" id="auth-msg"></div>
-    </form>
-    <div class="auth-footer">
-        已有账号？<a href="/login">去登录</a>
     </div>
-</div>
-<figure class="page-ui-mockup" aria-label="注册页界面示意">
-    <img src="/static/UI_pic/ui-mockup-register.png" alt="注册页界面示意" />
-    <figcaption>注册页示意</figcaption>
-</figure>
 </div>
 {% endblock %}
 {% block scripts %}

@@ -2,8 +2,25 @@
 {% block title %}外观设置 · DZPoker{% endblock %}
 {% block content %}
 <div class="settings-page">
-    <h1 class="page-title">外观设置</h1>
-    <p class="settings-desc">修改后即时生效，无需刷新。已登录时设置会同步到账号。</p>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Appearance Studio</p>
+        <h1 class="stitch-title-xl">外观设置</h1>
+        <p class="settings-desc">修改后即时生效，无需刷新。已登录时设置会同步到账号。结构参考 Stitch 生成的设置后台与皮肤画廊布局。</p>
+        <div class="stitch-grid-3">
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">主题</p>
+                <strong>浅色 / 深色 / 跟随系统</strong>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">皮肤</p>
+                <strong>10 套整体风格</strong>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">体验</p>
+                <strong>字体 / 动效 / 音效</strong>
+            </div>
+        </div>
+    </section>
     <figure class="page-ui-mockup" aria-label="设置页界面示意">
         <img src="/static/UI_pic/ui-mockup-settings.png" alt="设置页界面示意" />
         <figcaption>设置页示意</figcaption>
@@ -43,6 +60,11 @@
             <label class="skin-option" data-skin="high-contrast-arena"><span class="skin-swatch"></span><input type="radio" name="skin" value="high-contrast-arena"> <span>高对比竞技</span></label>
             <label class="skin-option" data-skin="light-minimal"><span class="skin-swatch"></span><input type="radio" name="skin" value="light-minimal"> <span>极简浅色</span></label>
             <label class="skin-option" data-skin="cyber-neon"><span class="skin-swatch"></span><input type="radio" name="skin" value="cyber-neon"> <span>赛博霓虹</span></label>
+        </div>
+        <div class="stitch-grid-3" style="margin-top:18px;">
+            <div class="blind-level-row">Obsidian Royale：深绿与磨砂黑，当前主推。</div>
+            <div class="blind-level-row">Royal Red：深红高压风格，适合赛事氛围。</div>
+            <div class="blind-level-row">Ghost Grey：极简深灰，适合长时间游戏。</div>
         </div>
     </section>
 

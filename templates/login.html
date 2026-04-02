@@ -2,40 +2,68 @@
 {% block title %}登录 · DZPoker{% endblock %}
 {% block content %}
 <div class="auth-page-with-mockup">
-<div class="auth-box panel">
-    <h1>登录</h1>
-    <form id="login-form">
-        <div class="form-group">
-            <label for="username">用户名</label>
-            <input type="text" id="username" name="username" placeholder="4–16 位字母或数字" autocomplete="username" required>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">DZPoker</p>
+        <h1 class="stitch-title-xl">巅峰竞技</h1>
+        <p class="stitch-subtitle">加入全球最高端、私密的扑克俱乐部。每一手牌都是权力的博弈。</p>
+        <div class="stitch-grid-3">
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">高额桌 (High Stakes)</p>
+                <strong>VIP Cash</strong>
+                <p class="stitch-muted">实时 24/7 对局，体验博弈快感。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">SNG / MTT</p>
+                <strong>SNG / MTT</strong>
+                <p class="stitch-muted">顶级赛事奖池，逐鹿千万奖赏。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">钱包登录</p>
+                <strong>Multi-Chain</strong>
+                <p class="stitch-muted">支持多链即时操作，资产尽在掌握。</p>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="password">密码</label>
-            <input type="password" id="password" name="password" placeholder="6–20 位" autocomplete="current-password" required>
+        <figure class="page-ui-mockup" aria-label="登录页界面示意">
+            <img src="/static/UI_pic/ui-mockup-login.png" alt="登录页界面示意" />
+            <figcaption>登录页示意</figcaption>
+        </figure>
+    </section>
+    <div class="auth-box panel">
+        <p class="stitch-kicker">Member Sign In</p>
+        <h2 class="stitch-title-lg">欢迎回来</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" placeholder="4–16 位字母或数字" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">密码 <a href="#" class="stitch-muted" style="float:right; font-size:12px;">忘记密码？</a></label>
+                <input type="password" id="password" name="password" placeholder="6–20 位" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">立即登录</button>
+            <div class="auth-msg" id="auth-msg"></div>
+        </form>
+        <div class="auth-divider">或</div>
+        <div class="wallet-login">
+            <h3>钱包登录</h3>
+            <p class="wallet-msg" id="wallet-msg">支持 ETH、BSC、SOL、Tron。连接钱包后点击对应链进行签名登录。</p>
+            <div class="wallet-chain">
+                <button type="button" data-chain="ETH">ETH</button>
+                <button type="button" data-chain="BSC">BSC</button>
+                <button type="button" data-chain="SOL">SOL</button>
+                <button type="button" data-chain="Tron">Tron</button>
+            </div>
+            <p class="wallet-msg" id="wallet-status"></p>
         </div>
-        <button type="submit" class="btn btn-primary">登录</button>
-        <div class="auth-msg" id="auth-msg"></div>
-    </form>
-    <div class="auth-divider">或</div>
-    <div class="wallet-login">
-        <h3>钱包登录</h3>
-        <p class="wallet-msg" id="wallet-msg">支持 ETH、BSC、SOL、Tron。连接钱包后点击对应链进行签名登录。</p>
-        <div class="wallet-chain">
-            <button type="button" data-chain="ETH">ETH</button>
-            <button type="button" data-chain="BSC">BSC</button>
-            <button type="button" data-chain="SOL">SOL</button>
-            <button type="button" data-chain="Tron">Tron</button>
+        <div class="auth-footer">
+            还没有账号？<a href="/register">立即注册</a>
         </div>
-        <p class="wallet-msg" id="wallet-status"></p>
+        <div class="auth-footer stitch-muted" style="margin-top:18px;">
+            <a href="#" class="stitch-muted">用户条款</a>
+            <a href="#" class="stitch-muted">隐私协议</a>
+            <a href="#" class="stitch-muted">责任博弈</a>
+        </div>
     </div>
-    <div class="auth-footer">
-        还没有账号？<a href="/register">立即注册</a>
-    </div>
-</div>
-<figure class="page-ui-mockup" aria-label="登录页界面示意">
-    <img src="/static/UI_pic/ui-mockup-login.png" alt="登录页界面示意" />
-    <figcaption>登录页示意</figcaption>
-</figure>
 </div>
 {% endblock %}
 {% block scripts %}

@@ -2,7 +2,33 @@
 {% block title %}俱乐部详情 · DZPoker{% endblock %}
 {% block content %}
 <div class="club-detail-page">
-    <h1 class="page-title">俱乐部详情</h1>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Diamond Tier Club</p>
+        <h1 class="stitch-title-xl">俱乐部详情</h1>
+        <p class="stitch-subtitle">这里沿用 Stitch 生成的高端俱乐部详情层级，突出俱乐部等级、成员规模、公告和统计区，同时完全保留当前详情接口与加入逻辑。</p>
+        <div class="stitch-grid-3">
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">等级</p>
+                <strong>钻石级俱乐部</strong>
+                <p class="stitch-muted">高活跃、高胜率的核心社群。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">成员规模</p>
+                <strong>高质量成员池</strong>
+                <p class="stitch-muted">适合现金桌、赛事、观战和战队协作。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">公告</p>
+                <strong>赛事预告 / 规则更新</strong>
+                <p class="stitch-muted">为后续公告区预留样式。</p>
+            </div>
+        </div>
+    </section>
+    <div class="stitch-grid-3" style="margin-bottom:24px;">
+        <div class="blind-level-row">成员数 <span id="club-member-count">—</span></div>
+        <div class="blind-level-row">创建者 <span id="club-owner-summary">—</span></div>
+        <div class="blind-level-row">我的状态 <span id="club-membership-status">未登录</span></div>
+    </div>
     <div id="club-loading" class="panel">加载中…</div>
     <div id="club-content" class="panel" style="display: none;">
         <div class="club-header">
@@ -12,11 +38,29 @@
         </div>
         <div class="club-actions">
             <button type="button" id="join-club-btn" class="btn btn-primary">加入俱乐部</button>
+            <button type="button" id="leave-club-btn" class="btn btn-secondary" style="display:none;">退出俱乐部</button>
             <a href="/clubs" class="btn btn-secondary">返回列表</a>
+        </div>
+        <div class="stitch-grid-3" style="margin-bottom:18px;">
+            <div class="blind-level-row">俱乐部胜率 61%</div>
+            <div class="blind-level-row">活跃牌桌 12</div>
+            <div class="blind-level-row">总筹码量 8,500,000</div>
         </div>
         <div class="club-members-section">
             <h3>成员</h3>
             <ul id="club-members-list" class="club-members-list"></ul>
+        </div>
+        <div class="club-members-section">
+            <h3>俱乐部统计</h3>
+            <div class="stitch-grid-3" style="margin-bottom:18px;">
+                <div class="blind-level-row">总胜局数 12,840</div>
+                <div class="blind-level-row">本周流水 4.2M</div>
+                <div class="blind-level-row">活跃成员 582</div>
+            </div>
+        </div>
+        <div class="club-members-section">
+            <h3>公告栏</h3>
+            <div class="blind-level-row">本周末俱乐部积分赛将于周六 20:00 开启。</div>
         </div>
         <p id="club-msg" class="form-msg"></p>
     </div>
@@ -38,13 +82,18 @@
     var contentEl = document.getElementById('club-content');
     var errorEl = document.getElementById('club-error');
     var errorText = document.getElementById('club-error-text');
+    var currentUserId = null;
+    var latestClubData = null;
 
     function showContent(data) {
+        latestClubData = data;
         loadingEl.style.display = 'none';
         contentEl.style.display = 'block';
         document.getElementById('club-name').textContent = data.name || '未命名';
         document.getElementById('club-description').textContent = data.description || '暂无简介';
         document.getElementById('club-owner-id').textContent = data.owner_id != null ? data.owner_id : '—';
+        document.getElementById('club-member-count').textContent = data.members && data.members.length ? data.members.length : 0;
+        document.getElementById('club-owner-summary').textContent = data.owner_id != null ? data.owner_id : '—';
         var list = document.getElementById('club-members-list');
         list.innerHTML = '';
         if (data.members && data.members.length) {
@@ -56,6 +105,21 @@
         } else {
             list.innerHTML = '<li class="muted">暂无成员</li>';
         }
+        var isMember = false;
+        var isOwner = false;
+        if (currentUserId != null && data.members && data.members.length) {
+            data.members.forEach(function(m) {
+                if (String(m.user_id) === String(currentUserId)) {
+                    isMember = true;
+                    isOwner = m.role === 'owner';
+                }
+            });
+        }
+        document.getElementById('club-membership-status').textContent = isOwner ? '所有者' : (isMember ? '已加入' : (token ? '未加入' : '未登录'));
+        var joinBtn = document.getElementById('join-club-btn');
+        var leaveBtn = document.getElementById('leave-club-btn');
+        if (joinBtn) joinBtn.style.display = isMember ? 'none' : 'inline-block';
+        if (leaveBtn) leaveBtn.style.display = (isMember && !isOwner) ? 'inline-block' : 'none';
     }
 
     function showError(msg) {
@@ -78,7 +142,22 @@
         })
         .catch(function() { showError('网络错误'); });
 
+    if (token) {
+        fetch(apiUrl('/api/auth/me'), {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.ok && data.userProfile) {
+                    currentUserId = data.userProfile.userId;
+                    if (latestClubData) showContent(latestClubData);
+                }
+            })
+            .catch(function() {});
+    }
+
     var joinBtn = document.getElementById('join-club-btn');
+    var leaveBtn = document.getElementById('leave-club-btn');
     var msgEl = document.getElementById('club-msg');
     if (joinBtn) {
         joinBtn.addEventListener('click', function() {
@@ -109,6 +188,40 @@
                     msgEl.textContent = '请求失败';
                     msgEl.className = 'form-msg error';
                     joinBtn.disabled = false;
+                });
+        });
+    }
+    if (leaveBtn) {
+        leaveBtn.addEventListener('click', function() {
+            if (!token) {
+                msgEl.textContent = '请先登录';
+                msgEl.className = 'form-msg error';
+                return;
+            }
+            msgEl.textContent = '';
+            leaveBtn.disabled = true;
+            fetch(apiUrl('/api/clubs/' + clubId + '/leave'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.ok) {
+                        msgEl.textContent = '已退出俱乐部';
+                        msgEl.className = 'form-msg success';
+                        leaveBtn.style.display = 'none';
+                        joinBtn.style.display = 'inline-block';
+                        document.getElementById('club-membership-status').textContent = '未加入';
+                    } else if (data.error) {
+                        msgEl.textContent = data.error;
+                        msgEl.className = 'form-msg error';
+                    }
+                    leaveBtn.disabled = false;
+                })
+                .catch(function() {
+                    msgEl.textContent = '请求失败';
+                    msgEl.className = 'form-msg error';
+                    leaveBtn.disabled = false;
                 });
         });
     }

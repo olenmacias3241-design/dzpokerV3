@@ -2,7 +2,25 @@
 {% block title %}赛事详情 · DZPoker{% endblock %}
 {% block content %}
 <div class="tournament-detail-page">
-    <h1 class="page-title">赛事详情</h1>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Event Detail</p>
+        <h1 class="stitch-title-xl">赛事详情</h1>
+        <p class="stitch-subtitle">赛事详情页采用 Stitch 的高端赛事详情版式，突出买入级别、状态和奖池氛围，同时继续复用报名、取消报名和进入大厅逻辑。</p>
+        <div class="stitch-grid-3">
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">买入级别</p>
+                <strong id="detail-hero-buyin">高额主赛 / 常规分站</strong>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">赛事状态</p>
+                <strong id="detail-hero-status">报名中 / 晚注册 / 进行中</strong>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">奖池结构</p>
+                <strong id="detail-hero-payout">盲注与奖励分配</strong>
+            </div>
+        </div>
+    </section>
     <p id="tournament-loading" class="tournaments-loading">加载中…</p>
     <div id="tournament-error" class="panel panel-error" style="display: none;">
         <p id="tournament-error-text"></p>

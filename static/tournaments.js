@@ -52,6 +52,29 @@
         });
     }
 
+    function updateHeroStats() {
+        var total = allTournaments.length;
+        var registration = allTournaments.filter(function(t) { return t.status === 'Registration' || t.status === 'LateRegistration'; }).length;
+        var running = allTournaments.filter(function(t) { return t.status === 'Running' || t.status === 'Break'; }).length;
+        var featured = allTournaments[0] || null;
+        var totalEl = document.getElementById('tournaments-total-count');
+        var regEl = document.getElementById('tournaments-registration-count');
+        var runEl = document.getElementById('tournaments-running-count');
+        var featureEl = document.getElementById('tournaments-hero-feature');
+        var typesEl = document.getElementById('tournaments-hero-types');
+        var statusEl = document.getElementById('tournaments-hero-status');
+        if (totalEl) totalEl.textContent = total;
+        if (regEl) regEl.textContent = registration;
+        if (runEl) runEl.textContent = running;
+        if (featureEl && featured) featureEl.textContent = featured.name || '赛事季进行中';
+        if (typesEl) {
+            var types = {};
+            allTournaments.forEach(function(t) { if (t.type) types[t.type] = true; });
+            typesEl.textContent = Object.keys(types).length ? Object.keys(types).join(' / ') : 'SNG / MTT';
+        }
+        if (statusEl) statusEl.textContent = '报名中 ' + registration + ' / 进行中 ' + running;
+    }
+
     function loadTournaments() {
         loadingEl.style.display = 'block';
         emptyEl.style.display = 'none';
@@ -76,6 +99,7 @@
                     return;
                 }
                 allTournaments = Array.isArray(data) ? data : (data.tournaments || []);
+                updateHeroStats();
                 renderList();
             })
             .catch(function() {

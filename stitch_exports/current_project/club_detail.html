@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DZPoker - 黑金至尊会</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary": "#003909",
+              "surface-container-high": "#2a2a2a",
+              "surface-bright": "#393939",
+              "on-error": "#690005",
+              "on-background": "#e5e2e1",
+              "tertiary-container": "#53a252",
+              "tertiary": "#88d982",
+              "on-error-container": "#ffdad6",
+              "primary": "#5adf82",
+              "primary-container": "#02a752",
+              "on-primary": "#003917",
+              "surface": "#131313",
+              "secondary-fixed-dim": "#e9c349",
+              "secondary-container": "#af8d11",
+              "on-surface-variant": "#bccabb",
+              "on-primary-fixed": "#00210b",
+              "on-primary-container": "#003113",
+              "background": "#131313",
+              "on-tertiary-fixed": "#002204",
+              "surface-tint": "#5adf82",
+              "tertiary-fixed": "#a3f69c",
+              "on-secondary-container": "#342800",
+              "on-secondary-fixed": "#241a00",
+              "on-primary-fixed-variant": "#005225",
+              "inverse-on-surface": "#313030",
+              "surface-variant": "#353534",
+              "secondary": "#e9c349",
+              "inverse-primary": "#006d33",
+              "on-secondary": "#3c2f00",
+              "surface-dim": "#131313",
+              "error-container": "#93000a",
+              "inverse-surface": "#e5e2e1",
+              "error": "#ffb4ab",
+              "tertiary-fixed-dim": "#88d982",
+              "outline": "#879486",
+              "on-tertiary-container": "#003207",
+              "primary-fixed-dim": "#5adf82",
+              "primary-fixed": "#78fc9c",
+              "on-surface": "#e5e2e1",
+              "surface-container-highest": "#353534",
+              "on-tertiary-fixed-variant": "#005312",
+              "secondary-fixed": "#ffe088",
+              "outline-variant": "#3d4a3e",
+              "surface-container-low": "#1c1b1b",
+              "surface-container": "#201f1f",
+              "on-secondary-fixed-variant": "#574500",
+              "surface-container-lowest": "#0e0e0e"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-panel {
+        background: rgba(53, 53, 52, 0.6);
+        backdrop-filter: blur(24px);
+      }
+      .emerald-gradient {
+        background: linear-gradient(135deg, #5adf82 0%, #02a752 100%);
+      }
+      .text-shadow-premium {
+        text-shadow: 0px 4px 12px rgba(0,0,0,0.5);
+      }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar Shell -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313] flex justify-between items-center h-16 px-6 max-w-full shadow-[0px_20px_40px_rgba(0,0,0,0.4)]">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic tracking-tighter text-[#5adf82] font-headline">DZPoker</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="font-headline font-bold tracking-tight transition-colors text-[#e5e2e1] hover:text-[#5adf82]" href="#">Lobby</a>
+<a class="font-headline font-bold tracking-tight transition-colors text-[#5adf82] border-b-2 border-[#5adf82] pb-1" href="#">Clubs</a>
+<a class="font-headline font-bold tracking-tight transition-colors text-[#e5e2e1] hover:text-[#5adf82]" href="#">Tournaments</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-xl hover:bg-[#393939] transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined text-[#e5e2e1]" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-xl hover:bg-[#393939] transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined text-[#e5e2e1]" data-icon="account_balance_wallet">account_balance_wallet</span>
+</button>
+<img alt="Player Profile" class="w-8 h-8 rounded-full border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABzC6ahJnIJv5KQejCyx9HU1MGnxjc1toqc5ECLb7DwVYT7DxI7oL_GAicY6DF1E75sayOWiqhrOpItOw4SdDJ6y0qDyydBAPfEqIIVDIz_RvVPP7feYx92HX4EXIkSFK4L1a09XD6FbclOrH_vfxKyGFQTrUTdXDT2jHGs7MUo1S2fPqtnNQOM3rFt5ly8TMAwe_PQjzzg1Le191cPibiXK8lfuOdpJHt6WGICZAzDpolulyFny605PRzVRMGIL_1I6aMLFc2XPw"/>
+</div>
+</nav>
+<main class="pt-16 min-h-screen">
+<!-- Hero Section -->
+<section class="relative h-[460px] w-full overflow-hidden flex items-end pb-12 px-6 md:px-12">
+<div class="absolute inset-0 z-0">
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent z-10"></div>
+<img alt="Club Background" class="w-full h-full object-cover grayscale-[0.2] contrast-[1.1]" data-alt="Luxurious underground poker room with dark oak tables, soft emerald lighting, and high-end leather chairs in a moody cinematic atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYKDvXBR25fzgRnPSXT9Kqw8knec6NqWXXZ_PppnzJkLxYTzcPK9kXsqcfeUFQyba-F4_r2OwjfZ5LJvHdFsosPZmvfTbpCjlnHdmSO4hibr44mXdHZEiy1Ulu1qIKMqOTISjB03_AWQEdhY2ejTj16Zls0indptHkmI5VERwS1onE6l8nlHZKYe6rTfi2jvpAIqqOvyj9A_4qAyP3uMcP1DKRcL86Lvui4Gbo81qAXIvXpIeNU83sNen36_TVRwQKDDyDBvNB7ok"/>
+</div>
+<div class="relative z-20 w-full max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-end gap-8">
+<div class="space-y-4">
+<a class="inline-flex items-center gap-2 text-primary hover:text-primary-fixed transition-colors group" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_back">arrow_back</span>
+<span class="text-sm font-semibold tracking-wide">返回</span>
+</a>
+<div class="flex items-center gap-4">
+<h1 class="text-4xl md:text-6xl font-headline font-black text-on-background tracking-tighter text-shadow-premium">黑金至尊会</h1>
+<span class="px-3 py-1 bg-secondary text-on-secondary-container text-xs font-black rounded-sm tracking-widest">VVIP</span>
+</div>
+<div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-on-surface-variant font-medium">
+<span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary scale-75" data-icon="group">group</span> 2,480 成员</span>
+<span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary scale-75" data-icon="person">person</span> 创建者: KingV</span>
+<span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-primary scale-75" data-icon="verified">verified</span> 官方认证</span>
+</div>
+<p class="max-w-2xl text-on-surface-variant/80 text-lg leading-relaxed">
+                        欢迎来到DZPoker最顶级的私人俱乐部。这里是策略与勇气的交汇点，黑金至尊会致力于为精英玩家提供极致公平、高额且私密的德州扑克竞技环境。
+                    </p>
+</div>
+<div class="flex flex-row md:flex-col gap-3 shrink-0">
+<button class="emerald-gradient text-on-primary font-headline font-extrabold px-10 py-4 rounded-xl shadow-lg active:scale-95 transition-transform duration-200">
+                        申请加入
+                    </button>
+<button class="bg-surface-container-high text-on-surface font-headline font-bold px-10 py-4 rounded-xl border border-outline-variant/20 hover:bg-surface-bright active:scale-95 transition-all">
+                        查看详情
+                    </button>
+</div>
+</div>
+</section>
+<!-- Main Layout -->
+<div class="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-10 py-12">
+<!-- Left: Member List -->
+<div class="lg:col-span-8 space-y-8">
+<div class="flex items-center justify-between">
+<h2 class="text-2xl font-headline font-bold text-on-background flex items-center gap-3">
+                        核心成员 <span class="text-sm font-normal text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded">6/2,480</span>
+</h2>
+<div class="flex gap-2">
+<button class="p-2 bg-surface-container-low rounded-lg text-outline-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Bento Grid for Members -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Member 1 -->
+<div class="group bg-surface-container-low p-5 rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-all duration-300">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img alt="Member" class="w-14 h-14 rounded-full border-2 border-secondary/40" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDg9Gb9unpbANm5s5F1ZE9gesY_bNQZPPC17N39Rk60l1AXlL99Bk8NfPOotFMSpPLNvI3i6OG9yCTK0rime1J0-VmOBA2CM6SLi7EAomR2GZ-lEsiHYI3hrRSfl6TQMNu2FDpEFzWpNdTrKBKqnkerd1EkySEm-3_vd1FIeHLaxyvBAp5r5FxIGZbMxi22AufXsT4azI4Z-krBdZf1uPrsuaP2Fa1cWRLMTjA8k7fEZH9YKlubyThv8WKB-35G3qPHbFgq33VEky4"/>
+<span class="absolute bottom-0 right-0 w-4 h-4 bg-primary border-2 border-surface rounded-full"></span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-on-background text-lg">KingV</h3>
+<span class="text-[10px] font-black bg-secondary/10 text-secondary border border-secondary/20 px-1.5 py-0.5 rounded">FOUNDER</span>
+</div>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-xs text-on-surface-variant">加入于 2023.01.12</span>
+<span class="text-xs font-bold text-primary">胜率 64%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Member 2 -->
+<div class="group bg-surface-container-low p-5 rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-all duration-300">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img alt="Member" class="w-14 h-14 rounded-full border-2 border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQX7vH6Bz5BdrzmNx3cuTW9rNsAXX8MxEpLR32tAAbhwT9BW6alcn9vL3M1RJZZvUDNYKrz7_FnpGgYN42o2CozFzjbmtPNx8Q-a2UHQHQfqawsu00rTyDNE5cuXHSnoy68vrssnt-1c8xbPtcmcTwItBBe-_wbwfArXHLVHEIeq44fgV8d7JnxIzZFRXd6dtMqpPNLVuKYG6PyX5a-EOkbiY7DuyE8UlUmu56H04XY9_mZ0oljEEMJKWoIX5N8QR0FpUXKghMfFU"/>
+<span class="absolute bottom-0 right-0 w-4 h-4 bg-primary border-2 border-surface rounded-full"></span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-on-background text-lg">RoyalFlush</h3>
+<span class="text-[10px] font-black bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded">ADMIN</span>
+</div>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-xs text-on-surface-variant">加入于 2023.02.05</span>
+<span class="text-xs font-bold text-primary">胜率 58%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Member 3 -->
+<div class="group bg-surface-container-low p-5 rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-all duration-300">
+<div class="flex items-center gap-4">
+<img alt="Member" class="w-14 h-14 rounded-full border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKE-wgx80fyQzcKC4m8cPiLhuAfHho-epk-TmXdCc6eqlxNONAqzz6j7BA7U0e--LQe6rlHcgZO50HgebnNegGs3HDysIjuN1u1YHY_WyPyGcRo4J8CfGzgLGMSdJFx6k7kuEcS5rBw9tEWkZuzNE1bvQ02ZRt5izp1l6-lbZed9aIRqKjgFliBaL_G9LqKJWf-Zqc9p3dv5YNMi1AK4iKre9lI_v0uLTFanEfIFtubwCA_ixOSmsthQBppltTjnFYtnmNFByWC3I"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-on-background text-lg">AceHigh_99</h3>
+<span class="text-[10px] font-black bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded">MEMBER</span>
+</div>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-xs text-on-surface-variant">加入于 2023.08.20</span>
+<span class="text-xs font-bold text-primary">胜率 51%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Member 4 -->
+<div class="group bg-surface-container-low p-5 rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-all duration-300">
+<div class="flex items-center gap-4">
+<img alt="Member" class="w-14 h-14 rounded-full border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7mTVFryBwhSK-gpCjKA7BN5DYEIy-faM20PEqJTLFhwAph0WGRKiWVQqtGt_DRW3HY2CEjwgfUb6DDsj__OxPjtFdnIP_BTtwA4xW6eVRgx7klc1_2JzFcI3UhRworwrMS7_rFmUmxZvAXjxN98ZMYOlKgLjkwkE-jLui3gEd5Qy8YOsFhZtQOcVyDyTzv-G36hkjBEOwgmfKlqjdPgyYgLsljJXDly0mBH34xzNJjFbzcc3n_XR5V9OSAU8e845rgZ8mBVH8QGc"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-on-background text-lg">LuckyShark</h3>
+<span class="text-[10px] font-black bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded">MEMBER</span>
+</div>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-xs text-on-surface-variant">加入于 2023.11.02</span>
+<span class="text-xs font-bold text-primary">胜率 55%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Member 5 -->
+<div class="group bg-surface-container-low p-5 rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-all duration-300">
+<div class="flex items-center gap-4">
+<img alt="Member" class="w-14 h-14 rounded-full border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArxd__9XMac7Q3Bg-M5hSpD7iLQOEg9YRGyESqtqO9uZwgtji4OGrFiY325xfi_ZwrIAdclt8bDT2C1bzmH5_ZIhBq_7hxtf_oYM2NMLxzUBwF6CciTVCX7LrOe9xyQ6TYsT9omkU_t44FmZrRhd2vaG4b_FWpvpLmGTdRAYNI7ELOxHp3ZDg4T1qMHHAmk3Pr-G0pjl4kgKmog0uZ5cjNKRVgnZ3ACqR0nKq5OcwBBKKaSHOPrCfKET7C728gSoepQrjEHt07nsc"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-on-background text-lg">FullHouse_M</h3>
+<span class="text-[10px] font-black bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded">MEMBER</span>
+</div>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-xs text-on-surface-variant">加入于 2023.12.15</span>
+<span class="text-xs font-bold text-primary">胜率 49%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Member 6 -->
+<div class="group bg-surface-container-low p-5 rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-all duration-300">
+<div class="flex items-center gap-4">
+<img alt="Member" class="w-14 h-14 rounded-full border border-outline-variant/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFc5Sblz2I0OtJf3jj52UsfWjTnujj1QOrK3HFBVwQ7yrzPl0HXBYKAD13VyDEdGkzv1-Gc8GktWJTuwY4rOTUwYcqHzu6otocL7CO0BO6OWzwflUcgLauEWfYC1XrU_PWqyFA2gEiwnqd_xE-iw7YXdq4EsP7qX86BsVctL9fY1atUMiKvQ99Ej5_3O0PLgE-xUqd_3Pp5yTdKjnZrmxuo3inDAd2vjE3vYVORt51TD92eeRydJHLNF6hmeJOX5rQ3p38kI3eJno"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<h3 class="font-bold text-on-background text-lg">BlindStealer</h3>
+<span class="text-[10px] font-black bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded">MEMBER</span>
+</div>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-xs text-on-surface-variant">加入于 2024.01.05</span>
+<span class="text-xs font-bold text-primary">胜率 52%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar -->
+<aside class="lg:col-span-4 space-y-8">
+<!-- CTA Join Table -->
+<div class="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-secondary/20 to-transparent border border-secondary/20">
+<div class="relative z-10">
+<h3 class="text-secondary font-headline font-black text-xl mb-2">加入私人牌局</h3>
+<p class="text-on-surface-variant text-sm mb-6">输入房号快速进入至尊会专属高额桌。</p>
+<div class="flex gap-2">
+<input class="bg-surface-container-lowest border-none rounded-xl text-on-surface focus:ring-1 focus:ring-secondary w-full placeholder:text-outline-variant" placeholder="输入房号..." type="text"/>
+<button class="bg-secondary text-on-secondary px-6 py-2 rounded-xl font-bold active:scale-95 transition-transform">
+                                进入
+                            </button>
+</div>
+</div>
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-9xl text-secondary opacity-5" data-icon="style">style</span>
+</div>
+<!-- Club Stats -->
+<div class="bg-surface-container-low p-6 rounded-2xl space-y-6">
+<h3 class="text-lg font-headline font-bold text-on-background">俱乐部统计</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-lowest p-4 rounded-xl">
+<p class="text-xs text-on-surface-variant mb-1">总胜局数</p>
+<p class="text-2xl font-headline font-black text-primary">12,840</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl">
+<p class="text-xs text-on-surface-variant mb-1">活跃房间</p>
+<p class="text-2xl font-headline font-black text-on-background">15</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl">
+<p class="text-xs text-on-surface-variant mb-1">本周流水</p>
+<p class="text-2xl font-headline font-black text-secondary">4.2M</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl">
+<p class="text-xs text-on-surface-variant mb-1">活跃成员</p>
+<p class="text-2xl font-headline font-black text-on-background">582</p>
+</div>
+</div>
+</div>
+<!-- Announcements -->
+<div class="bg-surface-container-low p-6 rounded-2xl">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-headline font-bold text-on-background">俱乐部公告</h3>
+<span class="material-symbols-outlined text-primary" data-icon="campaign">campaign</span>
+</div>
+<ul class="space-y-4">
+<li class="group cursor-pointer">
+<p class="text-xs text-outline mb-1">2024.05.20</p>
+<h4 class="text-sm font-semibold text-on-background group-hover:text-primary transition-colors">夏季巅峰锦标赛报名正式开启</h4>
+</li>
+<li class="group cursor-pointer">
+<p class="text-xs text-outline mb-1">2024.05.15</p>
+<h4 class="text-sm font-semibold text-on-background group-hover:text-primary transition-colors">至尊会VVIP等级权益全面升级通知</h4>
+</li>
+<li class="group cursor-pointer">
+<p class="text-xs text-outline mb-1">2024.05.10</p>
+<h4 class="text-sm font-semibold text-on-background group-hover:text-primary transition-colors">严厉打击伙牌行为的公告</h4>
+</li>
+</ul>
+</div>
+</aside></div>
+</main>
+<!-- SideNavBar (Mobile / Floating) -->
+<div class="fixed left-6 bottom-6 flex flex-col gap-3 z-40 md:hidden">
+<button class="w-14 h-14 bg-surface-container-high rounded-full flex items-center justify-center shadow-2xl border border-outline-variant/30 text-on-surface active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+</div>
+<!-- Footer Space -->
+<footer class="h-24 border-t border-outline-variant/10 flex items-center justify-center">
+<p class="text-xs text-outline tracking-widest font-bold opacity-30">DZPOKER • BLACK GOLD ELITE CLUB • EST 2023</p>
+</footer>
+</body></html>

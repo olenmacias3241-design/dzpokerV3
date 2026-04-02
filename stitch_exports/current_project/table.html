@@ -1,0 +1,314 @@
+<html class="dark"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "error": "#ffb4ab",
+            "secondary-fixed": "#baeed9",
+            "inverse-primary": "#735c00",
+            "on-secondary-fixed-variant": "#1d4f40",
+            "on-tertiary-container": "#967700",
+            "surface-tint": "#e9c349",
+            "surface-container-low": "#1c1b1b",
+            "on-primary": "#3c2f00",
+            "surface-container-high": "#2a2a2a",
+            "surface-bright": "#3a3939",
+            "inverse-on-surface": "#313030",
+            "surface-variant": "#353534",
+            "outline": "#8e9192",
+            "surface-container": "#201f1f",
+            "surface": "#131313",
+            "on-secondary-container": "#8dc0ac",
+            "on-tertiary-fixed-variant": "#574500",
+            "surface-container-lowest": "#0e0e0e",
+            "on-secondary-fixed": "#002117",
+            "on-secondary": "#00382a",
+            "error-container": "#93000a",
+            "on-primary-fixed": "#231a00",
+            "on-error-container": "#ffdad6",
+            "surface-dim": "#131313",
+            "tertiary": "#e9c349",
+            "primary-container": "#130d00",
+            "tertiary-fixed": "#ffe088",
+            "tertiary-container": "#130d00",
+            "on-tertiary": "#3c2f00",
+            "tertiary-fixed-dim": "#e9c349",
+            "outline-variant": "#444748",
+            "secondary-fixed-dim": "#9ed1bd",
+            "on-primary-container": "#967800",
+            "on-surface": "#e5e2e1",
+            "inverse-surface": "#e5e2e1",
+            "on-primary-fixed-variant": "#574500",
+            "secondary": "#9ed1bd",
+            "surface-container-highest": "#353534",
+            "on-error": "#690005",
+            "primary-fixed-dim": "#e9c349",
+            "on-tertiary-fixed": "#241a00",
+            "primary": "#e9c349",
+            "primary-fixed": "#ffe087",
+            "background": "#131313",
+            "on-background": "#e5e2e1",
+            "secondary-container": "#1d4f40",
+            "on-surface-variant": "#c4c7c7"
+          },
+          fontFamily: {
+            "headline": ["Plus Jakarta Sans"],
+            "body": ["Plus Jakarta Sans"],
+            "label": ["Plus Jakarta Sans"]
+          },
+          borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .table-perspective {
+      perspective: 1000px;
+    }
+    .poker-felt {
+      background: radial-gradient(circle at center, #1D4F40 0%, #0E2A22 70%, #081814 100%);
+      box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+    }
+    .card-shadow {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body selection:bg-primary selection:text-on-primary overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-4 h-14 bg-[#0E0E0E]">
+<div class="flex items-center gap-6">
+<span class="text-lg font-bold text-[#E9C349] tracking-tight">DZPoker</span>
+<nav class="hidden md:flex gap-8">
+<span class="font-['Plus_Jakarta_Sans'] uppercase tracking-[0.05em] text-[0.75rem] font-medium text-[#E9C349] font-bold">Table #42</span>
+<span class="font-['Plus_Jakarta_Sans'] uppercase tracking-[0.05em] text-[0.75rem] font-medium text-[#E5E2E1]">Blinds: 50/100</span>
+<span class="font-['Plus_Jakarta_Sans'] uppercase tracking-[0.05em] text-[0.75rem] font-medium text-[#E5E2E1]">Pre-flop</span>
+</nav>
+</div>
+<div class="flex gap-4">
+<button class="hover:bg-[#2A2A2A] transition-colors p-2 rounded-lg group">
+<span class="material-symbols-outlined text-[#E5E2E1]" data-icon="person_add">person_add</span>
+</button>
+<button class="hover:bg-[#2A2A2A] transition-colors p-2 rounded-lg group">
+<span class="material-symbols-outlined text-[#E5E2E1]" data-icon="chat">chat</span>
+</button>
+<button class="hover:bg-[#2A2A2A] transition-colors p-2 rounded-lg group">
+<span class="material-symbols-outlined text-[#E5E2E1]" data-icon="account_balance_wallet">account_balance_wallet</span>
+</button>
+</div>
+</header>
+<!-- Main Game Canvas -->
+<main class="relative w-full h-screen pt-14 pb-28 flex items-center justify-center bg-surface-container-lowest overflow-hidden">
+<!-- Atmospheric Background Glow -->
+<div class="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_50%_50%,_#1D4F40_0%,_transparent_60%)]"></div>
+<!-- The Poker Table (Tactical Asymmetry) -->
+<div class="relative w-[90%] max-w-6xl aspect-[21/9] rounded-[240px] poker-felt border-[12px] border-surface-container-high ring-1 ring-outline-variant/15 flex items-center justify-center">
+<!-- Community Cards -->
+<div class="flex gap-3 scale-110">
+<!-- Qs -->
+<div class="w-16 h-24 bg-white rounded-lg flex flex-col items-center justify-center card-shadow p-1">
+<span class="text-black font-bold text-lg self-start px-1 leading-none">Q</span>
+<span class="material-symbols-outlined text-black scale-125" data-icon="spades" style="font-variation-settings: 'FILL' 1;">playing_cards</span>
+</div>
+<!-- Jd -->
+<div class="w-16 h-24 bg-white rounded-lg flex flex-col items-center justify-center card-shadow p-1">
+<span class="text-red-600 font-bold text-lg self-start px-1 leading-none">J</span>
+<span class="material-symbols-outlined text-red-600 scale-125" data-icon="diamond" style="font-variation-settings: 'FILL' 1;">diamond</span>
+</div>
+<!-- 10h -->
+<div class="w-16 h-24 bg-white rounded-lg flex flex-col items-center justify-center card-shadow p-1">
+<span class="text-red-600 font-bold text-lg self-start px-1 leading-none">10</span>
+<span class="material-symbols-outlined text-red-600 scale-125" data-icon="favorite" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<!-- 7c -->
+<div class="w-16 h-24 bg-white rounded-lg flex flex-col items-center justify-center card-shadow p-1">
+<span class="text-black font-bold text-lg self-start px-1 leading-none">7</span>
+<span class="material-symbols-outlined text-black scale-125" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<!-- 2s -->
+<div class="w-16 h-24 bg-white rounded-lg flex flex-col items-center justify-center card-shadow p-1 opacity-50">
+<span class="text-black/50 font-bold text-lg self-start px-1 leading-none">2</span>
+<span class="material-symbols-outlined text-black/50 scale-125" data-icon="spades" style="font-variation-settings: 'FILL' 1;">playing_cards</span>
+</div>
+</div>
+<!-- Pot Info Overlay -->
+<div class="absolute top-1/4 left-1/2 -translate-x-1/2 text-center">
+<div class="uppercase tracking-[0.2em] text-[0.625rem] text-primary-fixed-dim/60 font-bold mb-1">主池 (Main Pot)</div>
+<div class="text-4xl font-headline font-extrabold text-primary-fixed-dim tracking-tight">24,500</div>
+<div class="mt-2 inline-flex bg-surface-container-lowest/40 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/10">
+<span class="text-[0.6875rem] font-bold text-on-surface-variant uppercase tracking-wider">边池: 1,200</span>
+</div>
+</div>
+<!-- Players Configuration (Asymmetric Positioning) -->
+<!-- Player 1 (Top Left) -->
+<div class="absolute -top-12 left-1/4 -translate-x-1/2">
+<div class="flex flex-col items-center gap-2">
+<div class="relative w-16 h-16 rounded-lg bg-surface-container-high border border-outline-variant/20 overflow-hidden">
+<img class="w-full h-full" data-alt="minimalist 2d avatar of a cool male poker player with glasses and a hoodie" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1RI8p2sR8uYtcsfFbGESKjW4_VyUWOaxmTLv28G4_Nv7dvPFR6vDs8NGrwD7N5XkK46HfxSL5oCL2S6b_Ydjo4d1qgYS7bzem1OtZUMRVHZePx7Wdb1TLCrr77DozvKTsqWXrlA4ca75ILG76BuJgd3XUWAuIBvi7co8eY7gp9Z1VL7LHY5NZc_xS1ELz6QOG296CRiPFcM4gbWsJbi2zkDMN0jz3FY-pKGkUv_Jhn-DzZ0Hp0Ea8bhPXwUXawxtTLX3o0uauaBk"/>
+</div>
+<div class="bg-surface-container-lowest/80 backdrop-blur-md px-4 py-2 rounded-lg border border-outline-variant/20 text-center min-w-[120px]">
+<div class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wide">陈先生</div>
+<div class="text-[0.875rem] font-headline font-bold text-primary-fixed-dim">450,200</div>
+</div>
+<div class="absolute top-1/2 -right-12 flex -space-x-4 scale-75">
+<div class="w-10 h-14 bg-surface-container-highest rounded-md border border-outline-variant/20 card-shadow rotate-[-10deg]"></div>
+<div class="w-10 h-14 bg-surface-container-highest rounded-md border border-outline-variant/20 card-shadow rotate-[5deg]"></div>
+</div>
+</div>
+</div>
+<!-- Player 2 (Top Right) -->
+<div class="absolute -top-12 right-1/4 translate-x-1/2">
+<div class="flex flex-col items-center gap-2">
+<div class="relative w-16 h-16 rounded-lg bg-surface-container-high border-2 border-primary-fixed-dim ring-4 ring-primary-fixed-dim/20 overflow-hidden">
+<img class="w-full h-full" data-alt="minimalist 2d avatar of a mysterious female player with dark hair and a formal suit" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuQ5uJQQNVvO-W2aIlYtT2M6ANmnw5i1RwCwbOSu58ymrQe1ZFWI0MzECHJ9rnJVdiU9d1IOLFkE3h2-wd1as4nVHAheNPAYdCDhZRBy3sfpXDTOXvyXDwQtvzznvPg8Fl_ly1fjR_2-qj6_Bz6G9azYbA4-YJcGj-Ap7PnwTCHtTiDOK8zU9gWn0FoDkoTFCdeyb4Am2SdHajZX0l1hG2ivSTd6xg3uBGyfTJMldBnZ14vA_BX_hdZDffPk-q9hHO9LaaHuz3IR0"/>
+<div class="absolute inset-0 bg-primary/20 flex items-center justify-center">
+<span class="text-[0.625rem] font-black uppercase text-primary tracking-tighter">THINKING</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest/80 backdrop-blur-md px-4 py-2 rounded-lg border border-primary-fixed-dim/40 text-center min-w-[120px]">
+<div class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wide">SHARK_11</div>
+<div class="text-[0.875rem] font-headline font-bold text-primary-fixed-dim">1,890,000</div>
+</div>
+<div class="absolute -bottom-8 bg-primary text-on-primary px-3 py-0.5 rounded-sm font-bold text-[0.625rem] uppercase tracking-widest shadow-lg">RAISE 5,000</div>
+</div>
+</div>
+<!-- Player 3 (Middle Right) -->
+<div class="absolute top-1/2 right-[-60px] -translate-y-1/2">
+<div class="flex flex-row items-center gap-4">
+<div class="bg-surface-container-lowest/80 backdrop-blur-md px-4 py-2 rounded-lg border border-outline-variant/20 text-right min-w-[120px]">
+<div class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wide">林妹妹</div>
+<div class="text-[0.875rem] font-headline font-bold text-primary-fixed-dim">32,100</div>
+</div>
+<div class="w-16 h-16 rounded-lg bg-surface-container-high border border-outline-variant/20 overflow-hidden">
+<img class="w-full h-full" data-alt="minimalist 2d avatar of a young woman with pink hair and a casual t-shirt" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVPpcdiZ6X0EnRaWjRX3kdzDEDDMyGK54yIztaC3X8ZAPsmrMWxwmEA3Y5A5OS65DFY73j__CesmvGmpE3ftngUyE_GAdpxbInBNyAe6hKXecH2eQiFUFJVStTd41qM1hFTnFEoszyxoBYh7MxSNyYSLy-EgC_mArVQ1lZWnULNwy4Ce2F5cvn1F9dRY5AcVyn5cAt_M99xUZRU_8fQqf9AioSxZo3Qlqkq8snMCJ0WlJCBt0pm_2bVMmtLnRDp_vYYDO9VB4xVu0"/>
+</div>
+</div>
+</div>
+<!-- Player 4 (HERO - Bottom Center) -->
+<div class="absolute -bottom-20 left-1/2 -translate-x-1/2">
+<div class="flex flex-col items-center gap-4">
+<div class="flex gap-1 scale-125 mb-4">
+<div class="w-14 h-20 bg-white rounded-lg flex flex-col items-center justify-center card-shadow p-1 rotate-[-4deg]">
+<span class="text-black font-bold text-lg self-start px-1 leading-none">Q</span>
+<span class="material-symbols-outlined text-black scale-110" data-icon="favorite" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<div class="w-14 h-20 bg-white rounded-lg flex flex-col items-center justify-center card-shadow p-1 rotate-[4deg]">
+<span class="text-black font-bold text-lg self-start px-1 leading-none">Q</span>
+<span class="material-symbols-outlined text-black scale-110" data-icon="diamond" style="font-variation-settings: 'FILL' 1;">diamond</span>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-surface-container-high/90 backdrop-blur-xl p-3 rounded-xl border border-primary/30 shadow-2xl">
+<div class="w-14 h-14 rounded-lg overflow-hidden border border-primary">
+<img class="w-full h-full" data-alt="minimalist 2d avatar of a professional male player with a slight beard and expensive headphones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgpFXr_6czb5OTe9kVV1VUjJypjLt2UxEt3D_Jpwk-8u0K1KqkWu3KHCKGVANcOX4GLxzpU4G7gFYPAT61ixNs_nL3R8REmklJVn_oGUf9GbWV0FwSdqjgK8qthN6jXH8rQskqqBKwZK3UPV0iPspXiYHgZ5usOxIA_dm2E1ri-dgEQfFVamkqZi9ZZnCal7wia5ydhHsHSJgg7FUjKVvTfcQL-yLSAeHsvia7PCPXc1vqWFCfQl7rKbB6RNQrnJyJrR0Iykhx4qk"/>
+</div>
+<div class="min-w-[140px]">
+<div class="flex justify-between items-end">
+<span class="text-[0.625rem] font-bold text-primary uppercase tracking-widest">你的手牌: 两对</span>
+<span class="text-[0.625rem] font-bold text-on-surface-variant">HERO</span>
+</div>
+<div class="text-xl font-headline font-black text-primary-fixed-dim">1,250,000</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Player 5 (Middle Left) -->
+<div class="absolute top-1/2 left-[-60px] -translate-y-1/2">
+<div class="flex flex-row items-center gap-4">
+<div class="w-16 h-16 rounded-lg bg-surface-container-high border border-outline-variant/20 overflow-hidden grayscale opacity-50">
+<img class="w-full h-full" data-alt="minimalist 2d avatar of a businessman with a grey suit" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB73HU4hz7McTKnanRNbcpacILd-JCtYG6_8KtzDu1jXCP4U532fmW-ntb4colgcbxdelQSXxthQcdfd34OkM-IfJM6W0eJPkabEjsU717FmljjxB-URO_d2sbg8owlTLGNjY6_Ai2a9SCP0r5v_EpR-ZqHl_-YREAvMxhfCKEKouNBNoMkl41jKBK4TYffe3K_0pmCHrKb5VncfR94Qy_qPwjzXI7F-qaLQ4-iSXWPWnrAwJupZC7RQt4D5LXQuJuQWKI8ELAk1HY"/>
+<div class="absolute inset-0 bg-black/60 flex items-center justify-center">
+<span class="text-[0.625rem] font-black uppercase text-on-surface tracking-tighter">FOLDED</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest/80 backdrop-blur-md px-4 py-2 rounded-lg border border-outline-variant/20 text-left min-w-[120px] opacity-50">
+<div class="text-[0.6875rem] font-bold text-on-surface uppercase tracking-wide">老王</div>
+<div class="text-[0.875rem] font-headline font-bold text-primary-fixed-dim">88,000</div>
+</div>
+</div>
+</div>
+<!-- Live Dealer Button -->
+<div class="absolute top-1/2 left-[20%] w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-b-4 border-gray-300">
+<span class="text-[0.625rem] font-black text-black">D</span>
+</div>
+</div>
+<!-- Hand History Overlay -->
+<div class="absolute top-20 right-6 flex flex-col gap-2">
+<button class="bg-surface-container/60 backdrop-blur-md px-4 py-2 rounded-lg border border-outline-variant/10 flex items-center gap-2 hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[1rem]" data-icon="history">history</span>
+<span class="text-[0.6875rem] font-bold uppercase tracking-wider">牌局记录</span>
+</button>
+<button class="bg-surface-container/60 backdrop-blur-md px-4 py-2 rounded-lg border border-outline-variant/10 flex items-center gap-2 hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[1rem]" data-icon="smart_toy">smart_toy</span>
+<span class="text-[0.6875rem] font-bold uppercase tracking-wider">邀请机器人</span>
+</button>
+</div>
+<!-- Mini Chat (Side) -->
+<div class="absolute bottom-32 left-6 w-64 h-48 bg-surface-container-lowest/40 backdrop-blur-2xl rounded-xl border border-outline-variant/15 flex flex-col">
+<div class="px-4 py-2 border-b border-outline-variant/10 flex justify-between items-center">
+<span class="text-[0.625rem] font-bold text-on-surface-variant uppercase tracking-widest">实时聊天</span>
+<span class="material-symbols-outlined text-[0.875rem]" data-icon="unfold_more">unfold_more</span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-2">
+<div class="text-[0.75rem]"><span class="text-primary-fixed-dim font-bold">SHARK_11:</span> 运气不错。</div>
+<div class="text-[0.75rem]"><span class="text-on-surface-variant font-bold">老王:</span> 全梭了？</div>
+<div class="text-[0.75rem]"><span class="text-secondary-fixed-dim font-bold">系统:</span> 游戏开始。</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Shell -->
+<div class="fixed bottom-0 left-0 w-full z-50 flex flex-col bg-[#0E0E0E]/80 backdrop-blur-xl border-t border-[#444748]/15 pb-6 pt-4">
+<!-- Betting Controls (Slider & Quick Buttons) -->
+<div class="max-w-4xl mx-auto w-full px-8 mb-4 flex items-center gap-8">
+<div class="flex-1 flex items-center gap-4">
+<span class="text-[0.6875rem] font-black text-primary uppercase">BET</span>
+<div class="flex-1 h-1 bg-surface-container-high rounded-full relative">
+<div class="absolute top-0 left-0 h-full w-[40%] bg-gradient-to-r from-primary/20 to-primary rounded-full"></div>
+<div class="absolute top-1/2 left-[40%] -translate-y-1/2 w-4 h-4 bg-primary rounded-sm shadow-xl ring-4 ring-primary/20 cursor-pointer"></div>
+</div>
+<div class="bg-surface-container-lowest px-4 py-2 rounded border border-primary/20 min-w-[100px] text-center">
+<span class="text-sm font-headline font-bold text-primary">5,000</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 bg-surface-container-high rounded-sm text-[0.6875rem] font-bold uppercase tracking-wider hover:bg-surface-bright transition-colors">最小</button>
+<button class="px-3 py-1.5 bg-surface-container-high rounded-sm text-[0.6875rem] font-bold uppercase tracking-wider hover:bg-surface-bright transition-colors">1/2 池</button>
+<button class="px-3 py-1.5 bg-surface-container-high rounded-sm text-[0.6875rem] font-bold uppercase tracking-wider hover:bg-surface-bright transition-colors">3/4 池</button>
+<button class="px-3 py-1.5 bg-surface-container-high rounded-sm text-[0.6875rem] font-bold uppercase tracking-wider hover:bg-surface-bright transition-colors">满池</button>
+</div>
+</div>
+<!-- Main Navigation Actions -->
+<div class="flex justify-around items-center px-4 gap-4">
+<!-- Fold -->
+<button class="flex-1 flex flex-col items-center justify-center text-[#E5E2E1] bg-[#2A2A2A] rounded-sm py-4 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined mb-1" data-icon="close">close</span>
+<span class="font-['Plus_Jakarta_Sans'] font-bold text-[0.6875rem] uppercase tracking-wider">弃牌 (Fold)</span>
+</button>
+<!-- Check -->
+<button class="flex-1 flex flex-col items-center justify-center text-[#E5E2E1] bg-[#2A2A2A] rounded-sm py-4 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined mb-1" data-icon="done">done</span>
+<span class="font-['Plus_Jakarta_Sans'] font-bold text-[0.6875rem] uppercase tracking-wider">让牌 (Check)</span>
+</button>
+<!-- Raise -->
+<button class="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-[#E9C349] to-[#967800] text-[#231A00] rounded-sm py-4 hover:brightness-110 active:scale-[0.98] transition-all shadow-xl">
+<span class="material-symbols-outlined mb-1" data-icon="add">add</span>
+<span class="font-['Plus_Jakarta_Sans'] font-bold text-[0.6875rem] uppercase tracking-wider">加注 (Raise)</span>
+</button>
+<!-- All-In -->
+<button class="flex-1 flex flex-col items-center justify-center text-[#E9C349] border border-[#E9C349]/30 bg-[#130D00] rounded-sm py-4 hover:bg-[#E9C349]/10 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined mb-1" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-['Plus_Jakarta_Sans'] font-bold text-[0.6875rem] uppercase tracking-wider">全押 (All-In)</span>
+</button>
+</div>
+</div>
+</body></html>

@@ -8,6 +8,7 @@ let mySeat = 0;
 let socket = null;
 /** 上次收到状态更新的时间（用于检测 WebSocket 漏推时轮询拉取） */
 var lastStateUpdateTime = 0;
+var currentTableMeta = { tableName: '', blinds: '', maxPlayers: 0 };
 /** 自动开始下一局的定时器 ID，避免重复调度 */
 var autoNextHandTimeout = null;
 /** 已展示的获胜信息，避免同一局多次触发弹窗动画 */
@@ -135,6 +136,13 @@ function updatePotChips(potNum) {
         html += '</span>';
     }
     el.innerHTML = html;
+    el.classList.remove('is-refreshing');
+    void el.offsetWidth;
+    el.classList.add('is-refreshing');
+    clearTimeout(window._potChipRefreshTimer);
+    window._potChipRefreshTimer = setTimeout(function () {
+        if (el) el.classList.remove('is-refreshing');
+    }, 520);
 }
 
 /** 牌桌音效：chip=下注/跟注/加注, fold=弃牌, win=获胜。受设置 soundEnabled / .sound-disabled 控制 */
@@ -239,7 +247,7 @@ function ensureToken() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const params = getUrlParams();
-    tableId = params.table ? parseInt(params.table, 10) : null;
+    tableId = params.table ? parseInt(params.table, 10) : 1;
     token = params.token || (typeof window.authGetToken === 'function' && window.authGetToken()) || localStorage.getItem('token') || '';
 
     const noTableMsg = document.getElementById('no-table-msg');
@@ -249,6 +257,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (noTableMsg) noTableMsg.style.display = 'block';
         if (gameArea) gameArea.style.display = 'none';
         return;
+    }
+    if (history.replaceState) {
+        var bootUrl = new URL(window.location.href);
+        if (!bootUrl.searchParams.get('table')) {
+            bootUrl.searchParams.set('table', String(tableId));
+            history.replaceState(null, '', bootUrl.toString());
+        }
     }
     if (noTableMsg) noTableMsg.style.display = 'none';
     if (gameArea) gameArea.style.display = '';
@@ -536,6 +551,12 @@ function loadTableAndGame() {
     fetch(apiUrl('/api/tables/' + tableId + '?token=' + encodeURIComponent(token)))
         .then(function (res) { return res.json(); })
         .then(function (data) {
+            currentTableMeta = {
+                tableName: data.table_name || '',
+                blinds: data.blinds || data.blindsDisplay || '',
+                maxPlayers: data.max_players || data.maxPlayers || 0
+            };
+            updateTableHeader(currentTableMeta, data.game_state || { stage: data.status === 'waiting' ? 'preflop' : '', max_players: data.max_players || 0, is_running: data.status === 'playing' });
             if (data.error) {
                 if (noTableMsg) {
                     noTableMsg.innerHTML = '<p>请先<a href="/lobby">登录并在大厅进入牌桌</a>，进入牌桌后再选择空位落座。</p>';
@@ -827,11 +848,78 @@ function showTableEmote(emoteChar) {
         existing.className = 'table-emote-center';
         table.appendChild(existing);
     }
-    existing.innerHTML = '<span class="seat-emote-bubble emote-visible" aria-label="表情">' + emoteChar + '</span>';
+    existing.innerHTML =
+        '<span class="seat-emote-bubble-wrap emote-visible" aria-label="表情">' +
+        '<span class="seat-emote-halo" aria-hidden="true"></span>' +
+        '<span class="seat-emote-spark seat-emote-spark-1" aria-hidden="true"></span>' +
+        '<span class="seat-emote-spark seat-emote-spark-2" aria-hidden="true"></span>' +
+        '<span class="seat-emote-spark seat-emote-spark-3" aria-hidden="true"></span>' +
+        '<span class="seat-emote-bubble">' + emoteChar + '</span>' +
+        '</span>';
     existing.style.display = 'block';
     setTimeout(function () {
         if (existing) existing.style.display = 'none';
     }, EMOTE_DISPLAY_TTL_MS);
+}
+
+function triggerStreetDealPulse(phase) {
+    var table = document.querySelector('.poker-table');
+    var community = document.getElementById('community-cards-display');
+    if (!table || !community) return;
+    var launcher = document.getElementById('table-deck-launch');
+    if (!launcher) {
+        launcher = document.createElement('div');
+        launcher.id = 'table-deck-launch';
+        launcher.className = 'table-deck-launch';
+        table.appendChild(launcher);
+    }
+    launcher.className = 'table-deck-launch deal-' + String(phase || 'street');
+    community.classList.remove('is-dealing-flop', 'is-dealing-turn', 'is-dealing-river');
+    community.classList.add('is-dealing-' + String(phase || 'street'));
+    void launcher.offsetWidth;
+    launcher.classList.add('is-active');
+    clearTimeout(window._dealPulseTimer);
+    window._dealPulseTimer = setTimeout(function () {
+        launcher.classList.remove('is-active');
+        community.classList.remove('is-dealing-flop', 'is-dealing-turn', 'is-dealing-river');
+    }, phase === 'flop' ? 1300 : 900);
+}
+
+function animateBetChipFlight(fromSeatEl, toGroupEl) {
+    var table = document.querySelector('.poker-table');
+    if (!table || !fromSeatEl || !toGroupEl) return;
+    var tableRect = table.getBoundingClientRect();
+    var fromRect = fromSeatEl.getBoundingClientRect();
+    var toRect = toGroupEl.getBoundingClientRect();
+    if (!tableRect.width || !tableRect.height) return;
+    var startX = fromRect.left + fromRect.width / 2 - tableRect.left;
+    var startY = fromRect.top + fromRect.height / 2 - tableRect.top;
+    var endX = toRect.left + toRect.width / 2 - tableRect.left;
+    var endY = toRect.top + toRect.height / 2 - tableRect.top;
+    var layer = document.getElementById('table-chip-flight-layer');
+    if (!layer) {
+        layer = document.createElement('div');
+        layer.id = 'table-chip-flight-layer';
+        layer.className = 'table-chip-flight-layer';
+        table.appendChild(layer);
+    }
+    var colors = ['gold', 'green', 'red'];
+    for (var i = 0; i < 3; i++) {
+        var chip = document.createElement('span');
+        chip.className = 'chip-flight chip-flight-' + colors[i % colors.length];
+        chip.style.left = startX + 'px';
+        chip.style.top = startY + 'px';
+        chip.style.setProperty('--chip-flight-x', (endX - startX + (i - 1) * 6) + 'px');
+        chip.style.setProperty('--chip-flight-y', (endY - startY + (i === 1 ? -8 : 4)) + 'px');
+        chip.style.animationDelay = (i * 60) + 'ms';
+        layer.appendChild(chip);
+        (function (el) {
+            setTimeout(function () { el.classList.add('is-flying'); }, 10);
+            setTimeout(function () {
+                if (el && el.parentNode) el.parentNode.removeChild(el);
+            }, 720);
+        })(chip);
+    }
 }
 
 function dealNextStreet() {
@@ -872,6 +960,64 @@ function normalizePlayer(player, seatIndex) {
     };
 }
 
+function stateLabelForHeader(state) {
+    if (!state) return '等待开始';
+    var stage = state.stage != null ? String(state.stage).toLowerCase() : '';
+    if (state.street_label) return state.street_label;
+    return stageLabel(stage);
+}
+
+function updateTableHeader(meta, state) {
+    var roomEl = document.getElementById('table-v2-room');
+    var blindsEl = document.getElementById('table-v2-blinds');
+    var modeEl = document.getElementById('table-v2-mode');
+    var stageEl = document.getElementById('table-v2-stage');
+    if (roomEl) {
+        var roomLabel = '#' + (tableId != null ? tableId : '--');
+        if (meta && meta.tableName) roomLabel += ' · ' + meta.tableName;
+        roomEl.textContent = roomLabel;
+    }
+    if (blindsEl) blindsEl.textContent = (meta && meta.blinds) ? meta.blinds : '-- / --';
+    if (modeEl) {
+        var seats = (state && state.max_players) || (meta && meta.maxPlayers) || 9;
+        modeEl.textContent = seats + '-max No Limit Hold\'em';
+    }
+    if (stageEl) {
+        var label = '等待开始';
+        if (state && state.is_running) label = stateLabelForHeader(state);
+        else if (state && state.stage) label = stageLabel(String(state.stage).toLowerCase());
+        stageEl.textContent = label;
+    }
+}
+
+function renderHeroFooterHand(state) {
+    var container = document.getElementById('hero-hole-cards');
+    if (!container) return;
+    function renderBack(extraClass) {
+        return '<div class="hero-hole-card hero-hole-card-back' + (extraClass ? ' ' + extraClass : '') + '"></div>';
+    }
+    if (!(mySeat >= 0 && state.players && state.players[mySeat])) {
+        container.innerHTML = renderBack('') + renderBack('hero-hole-card-shift');
+        return;
+    }
+    var me = state.players[mySeat];
+    var hand = me.hand || me.hole_cards || [];
+    var showFaces = Array.isArray(hand) && hand.length > 0;
+    var html = '';
+    for (var i = 0; i < 2; i++) {
+        var cls = 'hero-hole-card' + (i === 1 ? ' hero-hole-card-shift' : '');
+        if (showFaces && hand[i] && hand[i].suit != null && hand[i].rank != null && !(hand[i].suit === '?' && hand[i].rank === '?')) {
+            var suit = hand[i].suit;
+            var rank = hand[i].rank;
+            var colorClass = (suit === '♥' || suit === '♦') ? ' red' : ' black';
+            html += '<div class="' + cls + colorClass + '"><span class="hero-hole-rank">' + rank + '</span><span class="hero-hole-suit">' + suit + '</span></div>';
+        } else {
+            html += '<div class="' + cls + ' hero-hole-card-back"></div>';
+        }
+    }
+    container.innerHTML = html;
+}
+
 function updateUI(state) {
     lastStateUpdateTime = Date.now();
     var prevPot = lastState && lastState.pot != null ? lastState.pot : 0;
@@ -882,6 +1028,8 @@ function updateUI(state) {
     lastState = state;
     var stage = (state.stage != null ? String(state.stage) : '').toLowerCase();
     var stageVal = stage;
+    updateTableHeader(currentTableMeta, state);
+    renderHeroFooterHand(state);
     document.getElementById('stage-display').innerText = stageLabel(stageVal);
     const turnEl = document.getElementById('turn-display');
     if (window._turnCountdownInterval) {
@@ -978,6 +1126,7 @@ function updateUI(state) {
     var myChipsDisplayEl = document.getElementById('my-chips-display');
     var myBetDisplayEl = document.getElementById('my-bet-display');
     var callAmountDisplayEl = document.getElementById('call-amount-display');
+    var callAmountDisplayShellEl = document.getElementById('call-amount-display-shell');
     var streetHintEl = document.getElementById('street-hint');
     if (mySeat >= 0 && state.players && state.players[mySeat]) {
         var me = state.players[mySeat];
@@ -985,6 +1134,7 @@ function updateUI(state) {
         if (myChipsDisplayEl) myChipsDisplayEl.textContent = me.chips != null ? me.chips : 0;
         if (myBetDisplayEl) myBetDisplayEl.textContent = me.current_bet != null ? me.current_bet : 0;
         if (callAmountDisplayEl) callAmountDisplayEl.textContent = state.call_amount != null ? state.call_amount : 0;
+        if (callAmountDisplayShellEl) callAmountDisplayShellEl.textContent = state.call_amount != null ? state.call_amount : 0;
         if (streetHintEl) {
             streetHintEl.style.display = (state.pending_street && state.stage !== 'ended') ? 'block' : 'none';
         }
@@ -994,6 +1144,7 @@ function updateUI(state) {
     } else {
         if (myStatsEl) myStatsEl.style.display = 'none';
         if (streetHintEl) streetHintEl.style.display = 'none';
+        if (callAmountDisplayShellEl) callAmountDisplayShellEl.textContent = '0';
         var handTypeDisplayEl = document.getElementById('my-hand-type-display');
         if (handTypeDisplayEl) handTypeDisplayEl.textContent = '—';
     }
@@ -1022,6 +1173,20 @@ function updateUI(state) {
     }
     /* 围绕椭圆牌桌均匀分布：圆心 50%,50%，椭圆 rx>ry 与牌桌比例一致，座位贴桌缘外 */
     function seatPositionAroundTable(seatIndex, totalSeats) {
+        if (totalSeats === 9) {
+            var layout9 = [
+                { top: '92%', left: '50%', transform: 'translate(-50%, 0)' },
+                { top: '84%', left: '20%', transform: 'translate(-50%, 0)' },
+                { top: '50%', left: '2%', transform: 'translate(calc(-100% - 12px), -50%)' },
+                { top: '8%', left: '15%', transform: 'translate(-50%, -100%)' },
+                { top: '8%', left: '40%', transform: 'translate(-50%, -100%)' },
+                { top: '8%', left: '60%', transform: 'translate(-50%, -100%)' },
+                { top: '8%', left: '85%', transform: 'translate(-50%, -100%)' },
+                { top: '50%', left: '98%', transform: 'translate(12px, -50%)' },
+                { top: '84%', left: '80%', transform: 'translate(-50%, 0)' }
+            ];
+            return layout9[seatIndex] || layout9[0];
+        }
         var angleDeg = 90 - (seatIndex * 360 / totalSeats);
         var angleRad = angleDeg * Math.PI / 180;
         var rx = 54;
@@ -1042,15 +1207,10 @@ function updateUI(state) {
         }
         return out;
     }
-    var seatLayout6 = [];
-    for (var s = 0; s < 6; s++) {
-        seatLayout6.push(seatPositionAroundTable(s, 6));
+    var positions = [];
+    for (var s = 0; s < maxSeats; s++) {
+        positions.push(seatPositionAroundTable(s, maxSeats));
     }
-    var seatLayout8 = seatLayout6.slice();
-    for (var s = 6; s < 8; s++) {
-        seatLayout8.push(seatPositionAroundTable(s, 8));
-    }
-    var positions = maxSeats <= 6 ? seatLayout6 : seatLayout8;
 
     /* 本局手牌发牌动画样式随机（1–9 多种搞笑款，每轮可不同） */
     var holeDealStyle = 'deal-hole-' + (1 + Math.floor(Math.random() * 9));
@@ -1065,7 +1225,7 @@ function updateUI(state) {
     for (var i = 0; i < maxSeats; i++) {
         var realSeat = realSeatForDisplay(i);
         var player = slots[realSeat];
-        var pos = positions[i] || seatLayout6[0];
+        var pos = positions[i] || seatPositionAroundTable(0, Math.max(maxSeats, 2));
         var seatDiv = document.createElement('div');
         seatDiv.className = 'player-seat';
         seatDiv.setAttribute('data-seat', String(realSeat));
@@ -1250,6 +1410,8 @@ function updateUI(state) {
             if (curBet > prevBet) {
                 playGameSound('chip');
                 var seatEl = playersContainer.querySelector('.player-seat[data-seat="' + sb + '"]');
+                var chipsGroupEl = playersContainer.querySelector('.chips-on-table-group[data-seat="' + sb + '"]');
+                if (seatEl && chipsGroupEl) animateBetChipFlight(seatEl, chipsGroupEl);
                 if (seatEl) {
                     var infoEl = seatEl.querySelector('.player-info');
                     if (infoEl) {
@@ -1487,7 +1649,8 @@ function playDealPhaseAnimation(phase, cards) {
     }
 
     if (phase === 'flop' && cards && cards.length >= 3) {
-        var delayMs = 280;
+        triggerStreetDealPulse('flop');
+        var delayMs = 210;
         for (var i = 0; i < 3; i++) {
             var c = cardToDisplay(cards[i]);
             var suitClass = isRed(c.suit) ? 'red' : 'black';
@@ -1497,7 +1660,7 @@ function playDealPhaseAnimation(phase, cards) {
             cardDiv.innerText = c.suit + c.rank;
             container.appendChild(cardDiv);
             (function (el, idx) {
-                var delay = 120 + idx * delayMs;
+                var delay = 180 + idx * delayMs;
                 requestAnimationFrame(function () {
                     requestAnimationFrame(function () {
                         void el.offsetHeight;
@@ -1510,6 +1673,7 @@ function playDealPhaseAnimation(phase, cards) {
     }
 
     if ((phase === 'turn' || phase === 'river') && cards && cards.length >= 1) {
+        triggerStreetDealPulse(phase);
         var variant = 1 + Math.floor(Math.random() * 9);
         var dealClass = phase === 'turn' ? ('deal-turn deal-turn-' + variant) : ('deal-river deal-river-' + variant);
         var c = cardToDisplay(cards[0]);
@@ -1521,7 +1685,7 @@ function playDealPhaseAnimation(phase, cards) {
         requestAnimationFrame(function () {
             requestAnimationFrame(function () {
                 void cardDiv.offsetHeight;
-                setTimeout(function () { cardDiv.classList.add('visible'); }, 120);
+                setTimeout(function () { cardDiv.classList.add('visible'); }, 180);
             });
         });
     }
@@ -1571,12 +1735,15 @@ function animateCards(container, cards, stage) {
     var delayMs = 200;
     var dealClass = 'deal-community';
     if (newCards.length === 3 && existingCount === 0) {
-        delayMs = 220;
+        triggerStreetDealPulse('flop');
+        delayMs = 210;
         dealClass = 'deal-flop';
     } else if (newCards.length === 1 && existingCount === 3) {
+        triggerStreetDealPulse('turn');
         delayMs = 0;
         dealClass = 'deal-turn';
     } else if (newCards.length === 1 && existingCount === 4) {
+        triggerStreetDealPulse('river');
         delayMs = 0;
         dealClass = 'deal-river';
     } else {
@@ -1612,7 +1779,7 @@ function animateCards(container, cards, stage) {
             requestAnimationFrame(function () {
                 requestAnimationFrame(function () {
                     void cardDiv.offsetHeight;
-                    setTimeout(function () { cardDiv.classList.add('visible'); }, 220);
+                    setTimeout(function () { cardDiv.classList.add('visible'); }, dealClass === 'deal-flop' ? 180 : 150);
                 });
             });
         }, index * delayMs);

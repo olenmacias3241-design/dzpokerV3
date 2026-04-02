@@ -3,43 +3,79 @@
 
 {% block content %}
 <div class="lobby-container">
-    <header class="lobby-header">
-        <div class="player-balance">
-            <span class="coin-icon" aria-hidden="true">🪙</span>
-            <span id="balance-display">—</span>
+    <section class="stitch-hero">
+        <div class="lobby-header">
+            <div>
+                <p class="stitch-kicker">至尊大师系列赛</p>
+                <h1 class="stitch-title-xl lobby-title">德州扑克现金桌：精英俱乐部</h1>
+                <p class="stitch-subtitle">延用 Stitch 生成的大堂结构，突出现金桌发现、筛选与快速入局，同时保留 `lobby.js` 的真实动态逻辑。</p>
+            </div>
+            <div class="header-actions lobby-quick-play-wrap">
+                <div class="player-balance">
+                    <span class="coin-icon" aria-hidden="true">🪙</span>
+                    <span id="balance-display">—</span>
+                </div>
+                <button type="button" id="quick-start-btn" class="btn-play-now">马上游玩</button>
+                <span id="quick-start-msg" class="quick-start-msg" aria-live="polite"></span>
+            </div>
         </div>
-        <h1 class="lobby-title">德州扑克 · 大厅</h1>
-        <div class="header-actions lobby-quick-play-wrap">
-            <button type="button" id="quick-start-btn" class="btn-play-now">马上游玩</button>
-            <span id="quick-start-msg" class="quick-start-msg" aria-live="polite"></span>
-            <button class="btn-icon" type="button" aria-label="帮助">?</button>
-            <button class="btn-icon" type="button" aria-label="关闭">×</button>
+        <div class="stitch-grid-3">
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">现金桌</p>
+                <strong>1,240 名玩家正在竞技</strong>
+                <p class="stitch-muted">实时加入活跃牌桌，优先推荐可入座房间。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">盲注梯度</p>
+                <strong>低额 / 中额 / 高额</strong>
+                <p class="stitch-muted">按 bankroll 快速匹配合适级别。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">牌局类型</p>
+                <strong>NLH / 6+ / 保险模式</strong>
+                <p class="stitch-muted">支持常规桌、短牌与保险玩法。</p>
+            </div>
         </div>
-    </header>
+    </section>
 
-    <section class="lobby-tables-wrap">
-        <h2 class="lobby-tables-title">牌桌列表</h2>
-        <div class="lobby-filters">
-            <label for="filter-blinds">盲注</label>
-            <select id="filter-blinds" aria-label="按盲注筛选">
-                <option value="">全部</option>
-                <option value="small">小</option>
-                <option value="medium">中</option>
-                <option value="high">高</option>
-            </select>
-            <label for="filter-players">人数</label>
-            <select id="filter-players" aria-label="按人数筛选">
-                <option value="">全部</option>
-                <option value="2">2 人</option>
-                <option value="6">6 人</option>
-                <option value="9">9 人</option>
-            </select>
-            <button type="button" id="filter-apply" class="btn btn-secondary">应用</button>
+    <section class="lobby-tables-wrap panel">
+        <div class="stitch-header-row">
+            <h2 class="stitch-title-lg lobby-tables-title">牌桌列表</h2>
+            <div class="lobby-filters">
+                <label for="filter-blinds">盲注级别</label>
+                <select id="filter-blinds" aria-label="按盲注筛选">
+                    <option value="">全部级别</option>
+                    <option value="small">低额 (1/2 - 5/10)</option>
+                    <option value="medium">中额 (10/20 - 50/100)</option>
+                    <option value="high">高额 (100/200+)</option>
+                </select>
+                <label for="filter-players">玩家人数</label>
+                <select id="filter-players" aria-label="按人数筛选">
+                    <option value="">全部</option>
+                    <option value="2">2 人</option>
+                    <option value="6">6 人</option>
+                    <option value="9">9 人</option>
+                </select>
+                <label for="filter-table-type">牌局类型</label>
+                <select id="filter-table-type" aria-label="按牌局类型筛选">
+                    <option value="">无限制德州扑克</option>
+                    <option value="shortdeck">短牌 (6+)</option>
+                    <option value="insurance">保险模式</option>
+                </select>
+                <button type="button" id="filter-apply" class="btn btn-secondary">应用</button>
+                <button type="button" class="btn btn-secondary" aria-label="搜索">搜索</button>
+                <button type="button" class="btn btn-secondary" aria-label="更多筛选">筛选</button>
+            </div>
         </div>
         <div class="table-carousel-container">
             <button type="button" class="carousel-arrow left" aria-label="上一页">‹</button>
             <div class="table-list-scroll" id="table-list" role="list">
                 <p class="lobby-loading">加载中…</p>
+                <div class="stitch-card" style="padding:18px;">
+                    <p class="stitch-eyebrow">创建新牌桌</p>
+                    <strong>自定义盲注、人数和准入限制</strong>
+                    <p class="stitch-muted">邀请好友同台竞技，建立你的私人房。</p>
+                </div>
             </div>
             <button type="button" class="carousel-arrow right" aria-label="下一页">›</button>
         </div>
@@ -47,8 +83,8 @@
 
     <footer class="lobby-footer">
         <button type="button" id="create-table-btn" class="btn-icon-text">＋ 创建牌桌</button>
-        <button type="button" class="btn-icon-text">⚙ 设置</button>
-        <button type="button" class="btn-icon-text">🛒 购买筹码</button>
+        <a href="{{ url_for('settings_page') }}" class="btn btn-secondary">⚙ 设置</a>
+        <a href="{{ url_for('mall') }}" class="btn btn-secondary">🛒 购买筹码</a>
     </footer>
 
     <div id="create-table-panel" role="dialog" aria-modal="true" aria-labelledby="create-table-title" style="display:none;">

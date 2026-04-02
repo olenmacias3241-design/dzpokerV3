@@ -2,11 +2,28 @@
 {% block title %}个人中心 · DZPoker{% endblock %}
 {% block content %}
 <div class="profile-page">
-    <h1 class="page-title">个人中心</h1>
-    <figure class="page-ui-mockup" aria-label="个人中心界面示意">
-        <img src="/static/UI_pic/ui-mockup-profile.png" alt="个人中心界面示意" />
-        <figcaption>个人中心示意</figcaption>
-    </figure>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Player Profile</p>
+        <h1 class="stitch-title-xl">个人中心</h1>
+        <p class="stitch-subtitle">采用 Stitch 生成的高端战绩主页结构，突出头像、VIP 气质、数据总览与荣誉展示，同时继续使用现有 `/api/auth/me` 回填。</p>
+        <div class="stitch-grid-3">
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">战绩</p>
+                <strong>胜率 / 局数 / 大底池</strong>
+                <p class="stitch-muted">核心战绩信息集中展示。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">身份</p>
+                <strong>等级与经验</strong>
+                <p class="stitch-muted">展示成长轨迹与玩家层级。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">荣誉</p>
+                <strong>成就与近期表现</strong>
+                <p class="stitch-muted">为后续勋章与比赛记录留位。</p>
+            </div>
+        </div>
+    </section>
     <div id="profile-require-login" class="panel" style="display: none;">
         <p>请先 <a href="/login">登录</a> 后查看个人资料。</p>
     </div>
@@ -33,6 +50,32 @@
         <p class="profile-hint">修改昵称、头像等需后端接口支持，当前为只读展示。</p>
         <p class="profile-hint"><a href="{{ url_for('settings_page') }}">外观设置</a>：主题、界面版本、字体与动效等。</p>
     </div>
+    <section class="panel" style="padding:24px;">
+        <div class="stitch-header-row">
+            <h2 class="stitch-title-lg">近期表现</h2>
+            <span class="stitch-badge">已接入账号统计</span>
+        </div>
+        <div class="stitch-grid-3">
+            <div class="blind-level-row">总对局 <span id="profile-summary-hands">—</span></div>
+            <div class="blind-level-row">当前胜率 <span id="profile-summary-winrate">—</span></div>
+            <div class="blind-level-row">最大底池 <span id="profile-summary-pot">—</span></div>
+        </div>
+    </section>
+    <section class="panel" style="padding:24px;">
+        <div class="stitch-header-row">
+            <h2 class="stitch-title-lg">荣誉成就</h2>
+            <span id="profile-tier-badge" class="stitch-badge">Royal High Roller</span>
+        </div>
+        <div class="stitch-grid-3">
+            <div id="profile-achievement-1" class="blind-level-row">皇家同花顺之王</div>
+            <div id="profile-achievement-2" class="blind-level-row">主赛冠军</div>
+            <div id="profile-achievement-3" class="blind-level-row">高额桌常驻玩家</div>
+        </div>
+    </section>
+    <figure class="page-ui-mockup" aria-label="个人中心界面示意">
+        <img src="/static/UI_pic/ui-mockup-profile.png" alt="个人中心界面示意" />
+        <figcaption>个人中心示意</figcaption>
+    </figure>
 </div>
 {% endblock %}
 {% block scripts %}
@@ -62,6 +105,22 @@
             document.getElementById('profile-hands').textContent = (p.stats && p.stats.totalHandsPlayed != null) ? p.stats.totalHandsPlayed : '—';
             document.getElementById('profile-winrate').textContent = (p.stats && p.stats.winRate != null) ? p.stats.winRate + '%' : '—';
             document.getElementById('profile-biggest-pot').textContent = (p.stats && p.stats.biggestPotWon != null) ? p.stats.biggestPotWon.toLocaleString() : '—';
+            document.getElementById('profile-summary-hands').textContent = (p.stats && p.stats.totalHandsPlayed != null) ? p.stats.totalHandsPlayed : '—';
+            document.getElementById('profile-summary-winrate').textContent = (p.stats && p.stats.winRate != null) ? p.stats.winRate + '%' : '—';
+            document.getElementById('profile-summary-pot').textContent = (p.stats && p.stats.biggestPotWon != null) ? p.stats.biggestPotWon.toLocaleString() : '—';
+            var tierBadge = document.getElementById('profile-tier-badge');
+            if (tierBadge) {
+                var level = Number(p.level || 0);
+                tierBadge.textContent = level >= 20 ? 'Legend Tier' : level >= 10 ? 'Diamond Tier' : 'Rising Pro';
+            }
+            var achievements = [
+                (p.stats && p.stats.winRate != null && p.stats.winRate >= 60) ? '胜率超过 60%' : '持续提升中的牌手',
+                (p.stats && p.stats.totalHandsPlayed != null && p.stats.totalHandsPlayed >= 100) ? '百局老将' : '新晋竞技玩家',
+                (p.stats && p.stats.biggestPotWon != null && p.stats.biggestPotWon >= 1000) ? '高额底池掌控者' : '等待高光时刻'
+            ];
+            document.getElementById('profile-achievement-1').textContent = achievements[0];
+            document.getElementById('profile-achievement-2').textContent = achievements[1];
+            document.getElementById('profile-achievement-3').textContent = achievements[2];
             var avatarEl = document.getElementById('profile-avatar');
             if (p.avatarUrl) {
                 avatarEl.style.backgroundImage = 'url(' + p.avatarUrl + ')';

@@ -1139,9 +1139,15 @@ def api_fill_bots(table_id):
 @app.route("/api/mall/products")
 def api_mall_products():
     return jsonify({"products": [
-        {"id": "t1", "name": "经典绿绒", "category": "table_theme", "price": 0, "icon": "🃏"},
-        {"id": "c1", "name": "标准红背", "category": "card_back", "price": 0, "icon": "🂠"},
-        {"id": "e1", "name": "基础表情", "category": "emote", "price": 0, "icon": "😊"},
+        {"id": "t1", "name": "经典绿绒", "category": "table_theme", "price": 0, "icon": "🃏", "desc": "默认牌桌主题"},
+        {"id": "t2", "name": "Obsidian Night", "category": "table_theme", "price": 200000, "icon": "♠️", "desc": "黑曜石暗夜高端牌桌"},
+        {"id": "t3", "name": "Dragon's Breath", "category": "table_theme", "price": 200000, "icon": "🐉", "desc": "传奇龙焰主题"},
+        {"id": "c1", "name": "标准红背", "category": "card_back", "price": 0, "icon": "🂠", "desc": "默认卡背"},
+        {"id": "c2", "name": "Imperial Gold", "category": "card_back", "price": 50000, "icon": "👑", "desc": "御金之印稀有卡背"},
+        {"id": "e1", "name": "基础表情", "category": "emote", "price": 0, "icon": "😊", "desc": "默认表情包"},
+        {"id": "e2", "name": "VIP Emote Pack", "category": "emote", "price": 10000, "icon": "🎭", "desc": "至尊表情包"},
+        {"id": "s1", "name": "High Roller Bundle", "category": "chip_skin", "price": 9999, "icon": "💰", "desc": "豪客筹码礼包"},
+        {"id": "s2", "name": "Veridian Felt", "category": "chip_skin", "price": 25000, "icon": "🟢", "desc": "翠绿毡面筹码皮肤"},
     ]})
 
 

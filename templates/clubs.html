@@ -2,9 +2,19 @@
 {% block title %}俱乐部 · DZPoker{% endblock %}
 {% block content %}
 <div class="clubs-page">
-    <h1 class="page-title">俱乐部</h1>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Club Lounge</p>
+        <h1 class="stitch-title-xl">俱乐部</h1>
+        <p class="stitch-subtitle">加入精英德州扑克社区，创建或加入你的私人俱乐部，与全球顶级玩家同场竞技。</p>
+        <div class="tournament-actions">
+            <button type="button" id="create-club-btn" class="btn btn-primary">创建俱乐部</button>
+        </div>
+    </section>
     <div class="panel clubs-actions">
-        <button type="button" id="create-club-btn" class="btn btn-primary">创建俱乐部</button>
+        <button type="button" class="btn btn-secondary">所有</button>
+        <button type="button" class="btn btn-secondary">热门</button>
+        <button type="button" class="btn btn-secondary">最新</button>
+        <button type="button" class="btn btn-secondary">好友加入</button>
     </div>
     <div id="create-club-form" class="panel" style="display: none;">
         <h2>新建俱乐部</h2>
@@ -27,6 +37,7 @@
         <p id="clubs-loading" class="clubs-loading">加载中…</p>
         <p id="clubs-empty" class="clubs-empty" style="display: none;">暂无俱乐部，点击上方「创建俱乐部」创建。</p>
         <div id="clubs-list" class="clubs-list"></div>
+        <p class="stitch-muted" style="margin-top:18px;">您还没有加入任何俱乐部，立即开始您的博弈之旅吧！</p>
     </div>
 </div>
 {% endblock %}

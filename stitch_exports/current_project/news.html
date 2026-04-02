@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-Hans"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DZPoker Intelligence - 资讯中心</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;700;800&amp;family=Work+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#231a00",
+              "primary-fixed-dim": "#5adf82",
+              "secondary": "#e9c349",
+              "on-error-container": "#ffdad6",
+              "on-tertiary-fixed-variant": "#3c494f",
+              "error": "#ffb4ab",
+              "surface-container-low": "#1c1b1b",
+              "on-background": "#e5e2e1",
+              "on-primary-container": "#00602c",
+              "on-primary-fixed-variant": "#005225",
+              "outline": "#879486",
+              "on-primary-fixed": "#00210b",
+              "surface-tint": "#5adf82",
+              "surface-variant": "#353534",
+              "error-container": "#93000a",
+              "tertiary-fixed-dim": "#bbc9d0",
+              "on-surface": "#e5e2e1",
+              "surface-dim": "#131313",
+              "on-secondary": "#3c2f00",
+              "surface-bright": "#393939",
+              "background": "#131313",
+              "primary": "#78fc9c",
+              "on-error": "#690005",
+              "surface-container-highest": "#353534",
+              "tertiary-fixed": "#d7e5ec",
+              "on-secondary-container": "#342800",
+              "secondary-container": "#ae8d10",
+              "tertiary-container": "#bac8cf",
+              "on-surface-variant": "#bccabb",
+              "primary-container": "#5adf82",
+              "inverse-on-surface": "#313030",
+              "surface": "#131313",
+              "inverse-primary": "#006d33",
+              "inverse-surface": "#e5e2e1",
+              "primary-fixed": "#78fc9c",
+              "outline-variant": "#3d4a3e",
+              "surface-container-high": "#2a2a2a",
+              "secondary-fixed-dim": "#e9c349",
+              "surface-container-lowest": "#0e0e0e",
+              "secondary-fixed": "#ffe087",
+              "on-primary": "#003917",
+              "on-tertiary": "#253238",
+              "tertiary": "#d6e4eb",
+              "on-tertiary-container": "#47545a",
+              "on-tertiary-fixed": "#101d23",
+              "surface-container": "#201f1f",
+              "on-secondary-fixed-variant": "#574500"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Work Sans"],
+              "label": ["Work Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      body {
+        background-color: #131313;
+        color: #e5e2e1;
+      }
+      .asymmetric-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 2rem;
+      }
+    </style>
+</head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#131313] shadow-[0_40px_40px_rgba(120,252,156,0.04)] h-16 flex justify-between items-center px-8 py-4">
+<div class="text-2xl font-black text-[#E5E2E1] tracking-tighter font-headline">DZPoker</div>
+<div class="flex items-center gap-8">
+<nav class="hidden md:flex gap-10 font-headline tracking-tight text-sm">
+<a class="text-[#5ADF82] font-bold hover:text-[#78FC9C] transition-colors duration-300" href="#">首页</a>
+<a class="text-[#E5E2E1] opacity-70 hover:text-[#78FC9C] transition-colors duration-300" href="#">赛事</a>
+<a class="text-[#E5E2E1] opacity-70 hover:text-[#78FC9C] transition-colors duration-300" href="#">社区</a>
+</nav>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#E5E2E1] opacity-70 hover:text-[#5ADF82] cursor-pointer">search</span>
+<span class="material-symbols-outlined text-[#E5E2E1] opacity-70 hover:text-[#5ADF82] cursor-pointer" data-icon="person">person</span>
+</div>
+</div>
+</header>
+<!-- Sidebar Wrapper -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-[#0E0E0E] flex flex-col py-10 gap-8 z-40">
+<div class="px-8 mb-4">
+<h2 class="font-headline text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mb-1">The Archive</h2>
+<p class="text-[10px] text-on-surface-variant/40 font-light tracking-widest">DZPoker Editorial</p>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-4 py-3 text-[#5ADF82] border-l-2 border-[#5ADF82] pl-6 font-headline text-[11px] uppercase tracking-[0.2em] hover:bg-[#201F1F] transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="article">article</span>
+                资讯中心
+            </a>
+<a class="flex items-center gap-4 py-3 text-[#E5E2E1] opacity-40 pl-6 font-headline text-[11px] uppercase tracking-[0.2em] hover:bg-[#201F1F] hover:opacity-100 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="military_tech">military_tech</span>
+                奖励中心
+            </a>
+<a class="flex items-center gap-4 py-3 text-[#E5E2E1] opacity-40 pl-6 font-headline text-[11px] uppercase tracking-[0.2em] hover:bg-[#201F1F] hover:opacity-100 transition-all active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="mail">mail</span>
+                邮件通知
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen">
+<!-- Hero Section: Editorial Spotlight -->
+<section class="relative h-[870px] w-full overflow-hidden flex items-end">
+<div class="absolute inset-0 z-0">
+<img alt="Poker chips" class="w-full h-full object-cover grayscale-[0.4] brightness-[0.4]" data-alt="cinematic close-up of premium poker chips stacked on a dark felt table with dramatic green and gold backlighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlutRshnFoM2L_va9bOvSq7QdNyVupCTEkl48epRIuDxx7h9EUz0-Z4Uj5jJgyCSfBLsdUfBMe_r093CaT5gUue3WGUgb08RuwI9KUkHMWYeF4k-9ydpY34lnUj9Jl-8xKl9SHXSIEchAO13TFRP0Wevd0CInpr0Qu45SNPhkkDs74SQuY_CgZlpmZ6wiHGDXt-UkSmSck52sQrL3gdCHMI9WO3BZ7NsHvwo8xID6Un1MrPLZ_gc10XMrpqI-rilTQK0s60omgbyA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
+</div>
+<div class="relative z-10 px-20 pb-24 max-w-6xl">
+<div class="flex items-center gap-4 mb-6">
+<span class="px-4 py-1.5 bg-primary-container text-on-primary-container text-[10px] font-bold tracking-[0.15em] uppercase rounded-sm">赛事新闻</span>
+<span class="text-on-surface-variant text-[10px] tracking-widest font-light">2024年10月24日</span>
+</div>
+<h1 class="text-6xl font-headline font-extrabold text-on-background tracking-tighter leading-[1.1] mb-8">
+                    全球扑克巡回赛：澳门站 <br/>
+<span class="text-primary">皇者之巅即将揭幕</span>
+</h1>
+<p class="text-on-surface-variant max-w-2xl text-lg leading-relaxed mb-10 font-light">
+                    汇聚全球顶尖扑克玩家，争夺千万级奖金池。澳门之巅，谁能问鼎？DZPoker 将为您带来全方位的深度报道与实时动态。
+                </p>
+<div class="flex items-center gap-8">
+<button class="bg-primary-container text-on-primary-container px-10 py-4 font-bold text-sm tracking-widest hover:brightness-110 transition-all flex items-center gap-3 active:scale-95">
+                        阅读更多
+                        <span class="material-symbols-outlined">arrow_right_alt</span>
+</button>
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_#78fc9c]"></div>
+<span class="text-[10px] uppercase tracking-[0.2em] text-primary">Live Now</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Asymmetric News Grid -->
+<section class="px-20 py-32">
+<div class="asymmetric-grid">
+<!-- Large Vertical Card -->
+<article class="col-span-7 group cursor-pointer">
+<div class="relative aspect-[16/10] overflow-hidden bg-surface-container mb-8">
+<img alt="Professional poker player" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100" data-alt="moody high-contrast portrait of a professional poker player in shadows with a focus on intense eyes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7PwXlFkvBESyOolOzrGqqUNApYF_8uwC6_P6He-AdzZwq3_OD55r7whx0XKxN48W1O6aV72_V1aQWeFfB6KWpqDqwf0ZZdPybRM--Ra3TKigdoUopZmOIkokPybR4i5EUr4WFg0R25ibpqDd-Hcdc03ZbKv9_TkTE8emGWSCEoJToTVt0sVpfI1OC1X45tw3ZZ2Clwt4iPnqoAtL8FfvxmpmQIM2v3ODnusDMAwWyURsbzbM_mkLOqN9xIXyPYfXFUsNhzb8ekTc"/>
+</div>
+<div class="flex gap-4 items-center mb-4">
+<div class="w-0.5 h-4 bg-secondary"></div>
+<span class="text-secondary text-[10px] font-bold tracking-[0.2em] uppercase">深度解析 / Editor's Choice</span>
+</div>
+<h3 class="text-3xl font-headline font-bold text-on-background mb-4 tracking-tight leading-snug group-hover:text-primary transition-colors">解析高额桌职业玩家的心理防御</h3>
+<p class="text-on-surface-variant font-light leading-relaxed max-w-xl mb-6">
+                        在瞬息万变的高额局中，技术只是基础，心理博弈才是核心。我们对话多位世界冠军，揭秘顶尖玩家如何保持绝对冷静...
+                    </p>
+<div class="flex items-center justify-between border-t border-outline-variant/15 pt-6">
+<span class="text-[10px] text-on-surface-variant/60 tracking-widest">2024.10.22</span>
+<a class="text-primary text-[10px] font-bold tracking-widest flex items-center gap-2 group-hover:gap-4 transition-all" href="#">
+                            阅读全文 <span class="material-symbols-outlined text-sm">north_east</span>
+</a>
+</div>
+</article>
+<!-- Sidebar Grid Items -->
+<div class="col-span-5 flex flex-col gap-20">
+<article class="group cursor-pointer">
+<div class="relative aspect-video overflow-hidden bg-surface-container mb-6">
+<img alt="Private club membership" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80" data-alt="luxurious private lounge with leather chairs and dark wood aesthetic dimly lit by warm lamps" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzxV0ZiHGhAlMQhQHsM3DJQQaw7ITTJS2RAR6EnUKT4eXLRdcoV3jiJbG-KULRyUd-tfEywCX3j-hV09_67YWo8io_9LDouyyfPJOacLiACEWww58A2ktzRDQOEwgpa3G7y9NAHkVaYFTTNKfEp5M5cS0Q7EiZ5fiC1oIV4nt1qvWp1UatLbJQaSYMHH29_X623boWHfIQELPe4o5oX_vWgArbv3E859Dxlmdf55L01C8ySRIcKNo419eaHVDh2EmGxcZUWlEpPkk"/>
+</div>
+<span class="text-on-surface-variant text-[10px] tracking-widest uppercase mb-3 block">俱乐部通告</span>
+<h4 class="text-xl font-headline font-bold text-on-background group-hover:text-primary transition-colors tracking-tight">DZPoker 私人俱乐部夏季会员招募开启</h4>
+<p class="text-on-surface-variant text-sm mt-3 font-light leading-relaxed">专为精英玩家打造的私密竞技空间，现开放首批 50 名受邀名额。</p>
+</article>
+<article class="group cursor-pointer">
+<div class="relative aspect-video overflow-hidden bg-surface-container mb-6">
+<img alt="3D engine visualization" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80" data-alt="abstract tech visualization with glowing lines and 3d digital fragments on a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwITA9MddDBBFiAzlifAPVXHGp-ORkQNbK7rxP8O29oYz5DPaUi17otBJlRbGQ5hGLyUo8RXMUPVhKdDAVvJb_A-hEqB2S5-yoMtzhIZqgvhcgq5eAGGoVhp2yMrztmitpNuDci_nWu7spAg8RqNq-48h_PhCKq44uHSRDxYCr5ILhBUxdwpD-CeLc2zX0aUCf1ZqXt6H0E3kIfVtlxQp17Bl3oOZPwfuin3I_guK_eZFpFgsW-hN5vKtvgiRd2HUOvvrURA4ocFQ"/>
+</div>
+<span class="text-on-surface-variant text-[10px] tracking-widest uppercase mb-3 block">技术更新</span>
+<h4 class="text-xl font-headline font-bold text-on-background group-hover:text-primary transition-colors tracking-tight">V2.4 版本更新：全新3D渲染引擎上线</h4>
+<p class="text-on-surface-variant text-sm mt-3 font-light leading-relaxed">我们将视觉体验推向极致，通过全新引擎重塑每一次发牌的光影动态。</p>
+</article>
+</div>
+</div>
+</section>
+<!-- Newsletter Subscription Section (The Vault) -->
+<section class="px-20 py-40 bg-surface-container-lowest relative overflow-hidden">
+<div class="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-[400px] text-primary" style="font-variation-settings: 'wght' 100;">lock</span>
+</div>
+<div class="max-w-4xl relative z-10">
+<h2 class="text-5xl font-headline font-extrabold text-on-background tracking-tighter mb-8">Join The Archive.</h2>
+<p class="text-on-surface-variant text-lg max-w-xl mb-12 font-light leading-relaxed">
+                    订阅 DZPoker 智库周报。获取仅供核心会员阅读的策略指南、独家采访及赛事内幕资讯。
+                </p>
+<form class="flex gap-4 max-w-md">
+<input class="flex-1 bg-surface border-none text-on-surface px-6 py-4 font-light focus:ring-1 focus:ring-primary-container placeholder:text-on-surface-variant/30 text-sm" placeholder="您的电子邮箱地址" type="email"/>
+<button class="bg-primary text-on-primary px-8 py-4 font-bold text-sm tracking-widest hover:bg-primary-fixed-dim transition-all active:scale-95" type="submit">
+                        即刻加入
+                    </button>
+</form>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-12 border-t border-[#E5E2E1]/15">
+<div class="max-w-7xl mx-auto flex flex-col items-center gap-6">
+<div class="flex gap-10">
+<a class="font-['Work_Sans'] text-xs tracking-widest text-[#E5E2E1]/50 hover:text-[#5ADF82] underline-offset-8 transition-colors" href="#">Terms</a>
+<a class="font-['Work_Sans'] text-xs tracking-widest text-[#E5E2E1]/50 hover:text-[#5ADF82] underline-offset-8 transition-colors" href="#">Privacy</a>
+<a class="font-['Work_Sans'] text-xs tracking-widest text-[#E5E2E1]/50 hover:text-[#5ADF82] underline-offset-8 transition-colors" href="#">Editorial Guidelines</a>
+</div>
+<p class="font-['Work_Sans'] text-xs tracking-widest text-[#E5E2E1]/50">© 2024 DZPoker Intelligence. All Rights Reserved.</p>
+</div>
+</footer>
+</main>
+</body></html>

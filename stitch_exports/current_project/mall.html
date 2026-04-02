@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,800&amp;family=Inter:wght@400;500;600&amp;family=Noto+Sans+SC:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+        .font-headline { font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif; }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .emerald-gradient {
+            background: linear-gradient(135deg, #5adf82 0%, #02a752 100%);
+        }
+        .gold-shimmer {
+            background: linear-gradient(135deg, #e9c349 0%, #af8d11 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        .obsidian-card {
+            background: #1c1b1b;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .obsidian-card:hover {
+            background: #2a2a2a;
+            transform: translateY(-4px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "surface-variant": "#353534",
+                "outline": "#879486",
+                "inverse-on-surface": "#313030",
+                "surface": "#131313",
+                "surface-container": "#201f1f",
+                "surface-container-low": "#1c1b1b",
+                "surface-container-high": "#2a2a2a",
+                "surface-bright": "#393939",
+                "on-primary": "#003917",
+                "on-secondary-fixed-variant": "#574500",
+                "surface-tint": "#5adf82",
+                "on-tertiary-container": "#003207",
+                "secondary-fixed": "#ffe088",
+                "error": "#ffb4ab",
+                "inverse-primary": "#006d33",
+                "tertiary": "#88d982",
+                "surface-dim": "#131313",
+                "on-error-container": "#ffdad6",
+                "tertiary-fixed": "#a3f69c",
+                "primary-container": "#02a752",
+                "error-container": "#93000a",
+                "on-primary-fixed": "#00210b",
+                "on-secondary-fixed": "#241a00",
+                "surface-container-lowest": "#0e0e0e",
+                "on-secondary": "#3c2f00",
+                "on-tertiary-fixed-variant": "#005312",
+                "on-secondary-container": "#342800",
+                "secondary-fixed-dim": "#e9c349",
+                "outline-variant": "#3d4a3e",
+                "on-primary-container": "#003113",
+                "tertiary-fixed-dim": "#88d982",
+                "on-tertiary": "#003909",
+                "tertiary-container": "#53a252",
+                "on-background": "#e5e2e1",
+                "background": "#131313",
+                "secondary-container": "#af8d11",
+                "on-surface-variant": "#bccabb",
+                "primary": "#5adf82",
+                "primary-fixed-dim": "#5adf82",
+                "on-tertiary-fixed": "#002204",
+                "primary-fixed": "#78fc9c",
+                "on-primary-fixed-variant": "#005225",
+                "on-error": "#690005",
+                "surface-container-highest": "#353534",
+                "secondary": "#e9c349",
+                "on-surface": "#e5e2e1",
+                "inverse-surface": "#e5e2e1"
+              },
+              fontFamily: {
+                "headline": ["Plus Jakarta Sans"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<header class="bg-[#131313] shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex justify-between items-center w-full px-8 h-20 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black italic text-transparent bg-clip-text bg-gradient-to-br from-[#5adf82] to-[#02a752] font-['Plus_Jakarta_Sans'] tracking-tight">DZPoker</span>
+<nav class="hidden md:flex gap-6">
+<a class="text-[#e5e2e1] opacity-70 hover:text-[#5adf82] transition-colors duration-300 font-['Plus_Jakarta_Sans'] tracking-tight" href="#">Lobby</a>
+<a class="text-[#e5e2e1] opacity-70 hover:text-[#5adf82] transition-colors duration-300 font-['Plus_Jakarta_Sans'] tracking-tight" href="#">Tournaments</a>
+<a class="text-[#5adf82] border-b-2 border-[#5adf82] pb-1 font-['Plus_Jakarta_Sans'] tracking-tight" href="#">Boutique</a>
+<a class="text-[#e5e2e1] opacity-70 hover:text-[#5adf82] transition-colors duration-300 font-['Plus_Jakarta_Sans'] tracking-tight" href="#">VIP Lounge</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface active:scale-95 transition-transform"><span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span></button>
+<button class="text-on-surface active:scale-95 transition-transform"><span class="material-symbols-outlined" data-icon="notifications">notifications</span></button>
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/20">
+<img alt="Player Profile" data-alt="close-up portrait of a sophisticated high-stakes poker player in a dimly lit luxury club setting with emerald highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy88tCFqGi6zB5o_AUy8mIsvXx27zB69YW6T_7hiaxYuOMrQRd1WPGf8qVBHHDb3tRIwtC2eiewv66O_vnrkrmeTVsO4kAFowGiewLGPxd89BQ3PL9PrHRDKRvx9xfq4kZYRex3_YlLBxDdULb81n4L6v5V9pfHo0XCMuwCUTOvidW9ZyYd-xIj61MkRCBEpXB20S9JzeN4vWWm-0ergUnUfSXJWUXUofQR-7tOYbyoJ-U3houmi9I2Gcb1neF_97lK2cqrPfZug0"/>
+</div>
+</div>
+</header>
+<main class="max-w-[1440px] mx-auto px-8 py-8 space-y-12">
+<!-- Hero Section -->
+<section class="relative h-[480px] rounded-full overflow-hidden group">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="cinematic top-down view of a luxury poker table with obsidian felt, emerald lighting accents, and scattered gold chips in a high-end vault" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCHSfi--baRyKo7AcPhYvUateXXD484AXO0Pm8Ms-Egehu6MpxdryMiZkfdDsZNR3YIODAolfTUAiWhgv2Mvvfoqiavh0tQEhRLSu3VBlz3maxHtv7GIbJVNYOuFQfpdj9pcT3BSMCLfeFoFxI386H8sUA8CqzbviQMhnrXwZr43_uoW8oHnRnlKWQUB6d3WfUYikZYCk9IfMMBs4sJxGZ_HfB0ikTtJURo0ogFFxgNJEcSYCy8C8UJSMdXvCqrUC_DGP_ffNVgc88')"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent"></div>
+<div class="relative h-full flex flex-col justify-center px-16 space-y-6">
+<span class="inline-block px-4 py-1 rounded-full bg-primary/20 text-primary font-bold text-sm tracking-widest uppercase">New Arrivals</span>
+<div class="max-w-2xl">
+<h1 class="text-6xl font-extrabold font-headline leading-tight tracking-tight text-on-surface">Obsidian Night<br/><span class="text-secondary">黑曜石之夜</span></h1>
+<p class="text-lg text-on-surface-variant mt-4 leading-relaxed font-body">沉浸在极致的黑暗奢华中。全新的黑曜石之夜牌桌主题现已上线，专为追求最高水准的玩家打造。</p>
+</div>
+<div class="flex gap-4">
+<button class="emerald-gradient text-on-primary-container px-10 py-4 rounded-xl font-bold text-lg active:scale-95 transition-all shadow-xl shadow-primary/20">立即解锁</button>
+<button class="bg-surface-container-high/60 backdrop-blur-md border border-outline-variant/30 text-on-surface px-10 py-4 rounded-xl font-bold text-lg active:scale-95 transition-all">预览详情</button>
+</div>
+</div>
+</section>
+<!-- Category Navigation & Search -->
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 sticky top-24 z-40 py-4 bg-background">
+<div class="flex p-1.5 bg-surface-container-low rounded-xl gap-1">
+<button class="px-8 py-2.5 rounded-lg font-bold text-primary bg-primary/10 transition-all">全部</button>
+<button class="px-8 py-2.5 rounded-lg font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all">牌桌主题</button>
+<button class="px-8 py-2.5 rounded-lg font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all">卡牌背面</button>
+<button class="px-8 py-2.5 rounded-lg font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all">表情包</button>
+<button class="px-8 py-2.5 rounded-lg font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all">筹码皮肤</button>
+</div>
+<div class="relative w-full md:w-80">
+<input class="w-full bg-surface-container-low border-none rounded-xl px-12 py-3 text-on-surface focus:ring-1 focus:ring-primary/40 placeholder-outline" placeholder="搜索精品..." type="text"/>
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+</div>
+</div>
+<!-- Product Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Large Feature Card -->
+<div class="md:col-span-2 md:row-span-2 obsidian-card rounded-xl overflow-hidden flex flex-col p-1 group">
+<div class="relative aspect-video rounded-xl overflow-hidden mb-6">
+<img alt="Dragon's Breath Table" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="3D render of a legendary poker table with dragon motifs, glowing magma cracks on the felt, and golden scales around the rim" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBOJmEKCdakN8wYOcZW77XKFlW2_O0khXCpxPluh8z1S9dQ5w5_TQBPX96xBD8AcTvpMD_EodHJ-GKrLfpin2WFB1iWTZ1le8IIN4iiiDUqtsNDQIy2zF2PObv-SDtm_n5TVu_BDvJiI-FB9J94M1IDjPtxVqB0alAhTg_rGAODwgb02UnPchKamSRN4f0AwzCXyUsrJBU5V16HZwf7EWwxSFCBtdLmKdp5rB-C_-vhcbpUag_RqIBIcHdVJBYzuTgd050kXwfeNs"/>
+<div class="absolute top-4 right-4 bg-secondary text-on-secondary px-3 py-1 rounded-full text-xs font-bold uppercase">Legendary</div>
+</div>
+<div class="px-6 pb-6 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-2xl font-bold font-headline text-on-surface">Dragon's Breath <span class="text-secondary ml-2">龙之息</span></h3>
+<div class="flex items-center gap-1.5 text-secondary">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">monetization_on</span>
+<span class="font-bold">200,000</span>
+</div>
+</div>
+<p class="text-on-surface-variant mb-8 font-body">神级传奇主题。带有独特的熔岩动画与巨龙咆哮音效，让你的对手在气势下屈服。</p>
+<button class="mt-auto gold-shimmer text-on-secondary-container py-4 rounded-xl font-extrabold text-lg transition-transform active:scale-95">解锁神级主题</button>
+</div>
+</div>
+<!-- Card Back -->
+<div class="obsidian-card rounded-xl p-1 flex flex-col group">
+<div class="aspect-[3/4] bg-surface-container-lowest rounded-xl overflow-hidden mb-4 relative">
+<img alt="Imperial Gold Card" class="w-full h-full object-cover p-6 group-hover:scale-105 transition-transform duration-500" data-alt="luxury playing card back design featuring intricate gold filigree and imperial crests on a deep navy background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwHdplyQXfHNSonLhV6tqOrMtW5pi2vZEPFDyaEldoMt6idTo-X7B0kgNjhtyc1tUq99mWDPoqAc-pyXI7avPaw_RUbCjHcMUWQOY0YEW_gdV-6Rq5jmL5PfNjeDVtX3XKTmkf3LH39Lb_cmWEVyM80HKAA6ftlQZ0eZGSJzFTP5H9dEt2tlEnCW8WTl5Pq9AAQfH-QWYmZ3x-Tn7KZQv8ao9SjVQB3bVcWik-5AxRztd7_qvRlpsAlkagwyaPVTyYEpxCxrQNxXY"/>
+</div>
+<div class="px-4 pb-4">
+<h4 class="font-bold text-on-surface">Imperial Gold <span class="text-secondary-fixed-dim text-sm block">御金之印</span></h4>
+<div class="flex justify-between items-center mt-3">
+<span class="text-secondary font-bold">50,000 筹码</span>
+<button class="bg-surface-container-high border border-outline-variant/30 px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary hover:text-on-primary transition-all">立即购买</button>
+</div>
+</div>
+</div>
+<!-- Emote Pack -->
+<div class="obsidian-card rounded-xl p-1 flex flex-col group">
+<div class="aspect-[3/4] bg-surface-container-lowest rounded-xl flex items-center justify-center mb-4 p-8">
+<div class="grid grid-cols-2 gap-4">
+<span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings: 'FILL' 1;">mood</span>
+<span class="material-symbols-outlined text-4xl text-secondary" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="material-symbols-outlined text-4xl text-error" style="font-variation-settings: 'FILL' 1;">heart_broken</span>
+<span class="material-symbols-outlined text-4xl text-tertiary" style="font-variation-settings: 'FILL' 1;">celebration</span>
+</div>
+</div>
+<div class="px-4 pb-4">
+<h4 class="font-bold text-on-surface">VIP Emote Pack <span class="text-secondary-fixed-dim text-sm block">至尊表情包</span></h4>
+<div class="flex justify-between items-center mt-3">
+<span class="text-secondary font-bold">10,000 筹码</span>
+<button class="bg-surface-container-high border border-outline-variant/30 px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary hover:text-on-primary transition-all">立即使用</button>
+</div>
+</div>
+</div>
+<!-- Chip Skin -->
+<div class="obsidian-card rounded-xl p-1 flex flex-col group">
+<div class="aspect-[3/4] bg-surface-container-lowest rounded-xl overflow-hidden mb-4 relative">
+<img alt="High Roller Chips" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="macro photograph of stacked heavy casino chips with metallic gold edges and emerald centers on a black marble surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAuAPs56oOjsyfVnToZYcZpl3wbXCWtUZH7E4FR0WCEmlTkqK1Rd_Hd7MLRKhSbqRGOz6diod9V_WJpm7ctzXp-k5nUoAgFJh4WADsfs2BCqMsvNvj4Dqh-ytv9SGHswZ-qBnLS5kvGmNZy5M3F1NtX7LN1PWlaBg_AQPlWPOhta7wyoguVYDNHco0-IN7IDC6ntOgVOZVtBxFe3FuWMYRGkRr7T0qfI7AdfBrh9SuzKPdy3ImP19ToGtoiNNAiFadihjzLdYvSB8"/>
+</div>
+<div class="px-4 pb-4">
+<h4 class="font-bold text-on-surface">High Roller Bundle <span class="text-secondary-fixed-dim text-sm block">豪客筹码礼包</span></h4>
+<div class="flex justify-between items-center mt-3">
+<span class="text-secondary font-bold">$99.99</span>
+<button class="emerald-gradient text-on-primary-container px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/10 active:scale-95 transition-all">极速购买</button>
+</div>
+</div>
+</div>
+<!-- Small Item Placeholder -->
+<div class="obsidian-card rounded-xl p-1 flex flex-col group">
+<div class="aspect-[3/4] bg-surface-container-lowest rounded-xl overflow-hidden mb-4 relative flex items-center justify-center">
+<span class="material-symbols-outlined text-6xl text-outline-variant">layers</span>
+</div>
+<div class="px-4 pb-4">
+<h4 class="font-bold text-on-surface">Veridian Felt <span class="text-secondary-fixed-dim text-sm block">翠绿毡面</span></h4>
+<div class="flex justify-between items-center mt-3">
+<span class="text-secondary font-bold">25,000 筹码</span>
+<button class="bg-surface-container-high border border-outline-variant/30 px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary hover:text-on-primary transition-all">购买</button>
+</div>
+</div>
+</div>
+</div>
+<!-- VIP Promotion Banner -->
+<section class="glass-panel border border-outline-variant/20 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+<div class="absolute -left-20 -top-20 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full"></div>
+<div class="absolute -right-20 -bottom-20 w-64 h-64 bg-primary/10 blur-[100px] rounded-full"></div>
+<div class="flex flex-col md:flex-row items-center gap-8 relative z-10">
+<div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-secondary to-secondary-container flex items-center justify-center shadow-2xl shadow-secondary/20">
+<span class="material-symbols-outlined text-5xl text-on-secondary" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<div class="text-center md:text-left">
+<h2 class="text-3xl font-bold font-headline text-on-surface">DZPoker VIP 俱乐部</h2>
+<p class="text-on-surface-variant text-lg max-w-xl">加入 VIP 尊享全场商城 <span class="text-secondary font-bold">8.5折</span> 优惠，更有专属头像框与每日免费筹码领取。</p>
+</div>
+</div>
+<button class="bg-surface-bright text-on-surface px-12 py-4 rounded-xl font-bold text-lg border border-outline-variant/40 hover:bg-surface-container-highest transition-all relative z-10 active:scale-95">了解 VIP 特权</button>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 h-20 md:hidden bg-[#131313]/90 backdrop-blur-xl border-t border-[#3d4a3e]/15 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] rounded-t-3xl">
+<div class="flex flex-col items-center justify-center bg-[#2a2a2a] text-[#5adf82] rounded-xl px-6 py-2 shadow-[0_0_15px_rgba(90,223,130,0.1)]">
+<span class="material-symbols-outlined" data-icon="shopping_bag" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Shop</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#879486] opacity-60 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Inventory</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#879486] opacity-60 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Market</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#879486] opacity-60 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="text-[10px] uppercase tracking-widest font-bold">Clubs</span>
+</div>
+</nav>
+<footer class="max-w-[1440px] mx-auto px-8 py-12 text-outline text-center border-t border-outline-variant/10">
+<p class="font-body text-sm">© 2024 DZPoker Online Entertainment. 仅供娱乐。请理性游戏。</p>
+</footer>
+</body></html>

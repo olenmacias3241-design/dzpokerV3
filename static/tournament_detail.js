@@ -45,6 +45,11 @@
         document.getElementById('tournament-players').textContent = (data.minPlayersToStart != null ? data.minPlayersToStart : '?') + '–' + (data.maxPlayers != null ? data.maxPlayers : '?') + ' 人';
         document.getElementById('tournament-starts').textContent = formatStarts(data.startsAt);
         document.getElementById('tournament-latereg').textContent = data.lateRegMinutes != null ? data.lateRegMinutes + ' 分钟' : '—';
+        var heroBuyin = document.getElementById('detail-hero-buyin');
+        var heroStatus = document.getElementById('detail-hero-status');
+        var heroPayout = document.getElementById('detail-hero-payout');
+        if (heroBuyin) heroBuyin.textContent = (data.buyIn != null ? data.buyIn.toLocaleString() : '—') + (data.fee ? ' + ' + data.fee : '');
+        if (heroStatus) heroStatus.textContent = statusText(data.status);
 
         if (registerBtn && unregisterBtn && enterLobbyLink) {
             registerBtn.style.display = 'none';
@@ -79,8 +84,10 @@
                 row.textContent = (i + 1) + '. SB ' + (level.smallBlind != null ? level.smallBlind : level.small_blind) + ' / BB ' + (level.bigBlind != null ? level.bigBlind : level.big_blind) + (level.ante ? ' Ante ' + level.ante : '') + ' · ' + (level.durationMinutes != null ? level.durationMinutes : level.duration_minutes) + ' 分钟';
                 blindsList.appendChild(row);
             });
+            if (heroPayout) heroPayout.textContent = '共 ' + arr.length + ' 级盲注';
         } else {
             blindsSection.style.display = 'none';
+            if (heroPayout) heroPayout.textContent = '待公布';
         }
 
         var payoutsSection = document.getElementById('tournament-payouts-section');

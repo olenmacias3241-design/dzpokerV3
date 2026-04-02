@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DZPoker - 社交中心</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed-dim": "#d6d4d3",
+              "on-surface-variant": "#adaaaa",
+              "error-container": "#b92902",
+              "tertiary-fixed-dim": "#00cdeb",
+              "inverse-on-surface": "#565555",
+              "on-secondary-container": "#d2d0cf",
+              "on-tertiary-fixed-variant": "#005360",
+              "primary": "#72f797",
+              "on-surface": "#ffffff",
+              "on-error-container": "#ffd2c8",
+              "outline-variant": "#484847",
+              "surface-container": "#1a1919",
+              "on-error": "#450900",
+              "error-dim": "#d53d18",
+              "surface-variant": "#262626",
+              "on-secondary-fixed": "#403f3f",
+              "on-primary-fixed": "#00461e",
+              "surface-container-lowest": "#000000",
+              "on-primary": "#005b29",
+              "secondary-fixed": "#e5e2e1",
+              "tertiary-container": "#00dcfc",
+              "on-secondary": "#525151",
+              "on-tertiary": "#005360",
+              "secondary-container": "#474746",
+              "primary-fixed": "#72f797",
+              "on-background": "#ffffff",
+              "tertiary-dim": "#00cdeb",
+              "surface-dim": "#0e0e0e",
+              "surface-container-low": "#131313",
+              "on-secondary-fixed-variant": "#5c5b5b",
+              "on-primary-container": "#00290f",
+              "surface-container-highest": "#262626",
+              "surface": "#0e0e0e",
+              "surface-bright": "#2c2c2c",
+              "primary-container": "#29b760",
+              "primary-dim": "#63e88a",
+              "outline": "#767575",
+              "inverse-surface": "#fcf9f8",
+              "inverse-primary": "#006e33",
+              "error": "#ff7351",
+              "surface-tint": "#72f797",
+              "on-primary-fixed-variant": "#00662f",
+              "on-tertiary-fixed": "#00343c",
+              "tertiary-fixed": "#00dcfc",
+              "secondary-dim": "#d6d4d3",
+              "background": "#0e0e0e",
+              "secondary": "#e5e2e1",
+              "on-tertiary-container": "#004955",
+              "tertiary": "#77e6ff",
+              "primary-fixed-dim": "#63e88a",
+              "surface-container-high": "#201f1f"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0e0e0e;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-card {
+            background: rgba(19, 19, 19, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(72, 72, 71, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-glow {
+            box-shadow: 0 0 15px rgba(114, 247, 151, 0.2);
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full flex justify-between items-center px-6 h-16 bg-[#0e0e0e]/80 backdrop-blur-xl z-50 shadow-[0px_20px_40px_rgba(0,0,0,0.4)]">
+<div class="text-2xl font-black tracking-tighter text-[#72f797]">DZPoker</div>
+<div class="flex items-center space-x-6">
+<div class="flex items-center bg-[#1a1919] px-4 py-1.5 rounded-full space-x-2 border border-outline-variant/10">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="text-secondary font-bold text-sm tracking-tight">$1,250,000</span>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-[#adaaaa] hover:text-[#72f797] transition-colors scale-95 duration-200 ease-out active:scale-90">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-[#72f797]/30">
+<img class="w-full h-full object-cover" data-alt="High-end professional male poker player profile avatar in cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACIRZECHs6_fkyJu06PtwhbhVjOVvG2dURFLPb5dhFdgtBCrwgLHKexYFiBqrBPXsWAoBAoztVrKAHw_QdMzd4Yo5dTW7bD4er1UfieG2SUmn9wYKn51BAel0Aer-UpHBPcL6frVS2fu-y9jtTjTU5uS-gdY0P01tSNX5lgeYdcFNrS93qc3ZieA0RgeCaPr77f0BJb6_2OvadjQbXUvuyYzHGjTiUO8D0b5mbmi-NbATH_W1Q-LE3a2kYk7CEow6f_G97Pch_R-w"/>
+</div>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-[#0e0e0e] flex flex-col p-4 space-y-2 z-40">
+<!-- Profile Section -->
+<div class="flex items-center space-x-3 px-3 py-4 mb-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<img class="w-8 h-8 rounded-sm object-cover" data-alt="Abstract golden club emblem logo for premium poker lounge" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2EBjewpEWWoa2BfBkVbhIq9Z9BFjLXxhFnOjQKFpDDqugGrS8pbuh5sqQsOKx5NrKCZGUTEABRqTKWP9Tfp9xXGMV3U-5pDTb9VOMNElKzADb0utznqM7PmpA6SiBZyuSn5SpYktxtNDm8UMmJXr1nFWKvqgYC-Y0LGRogEJoVf4ABCtwJ6LAk4fhvfiYDypujjyXpdZwi8FEm-vi9LJrKqFmk8Npfqu_PhhIkiuj5Gb99Jm7vkAVj9N-pQkOO4PzPzSwadg6aM4"/>
+</div>
+<div>
+<p class="text-[#72f797] font-bold text-sm tracking-tight">The Obsidian Lounge</p>
+<p class="text-[#adaaaa] text-xs">Premium Member</p>
+</div>
+</div>
+<!-- Main Nav -->
+<nav class="space-y-1 flex-1">
+<a class="flex items-center space-x-3 px-4 py-3 text-[#72f797] bg-[#1a1919] rounded-lg font-medium text-sm transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Friends</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#131313] hover:text-[#e5e2e1] rounded-lg font-medium text-sm transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span>Recommended</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#131313] hover:text-[#e5e2e1] rounded-lg font-medium text-sm transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+<span>Requests</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#adaaaa] hover:bg-[#131313] hover:text-[#e5e2e1] rounded-lg font-medium text-sm transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="casino">casino</span>
+<span>Clubs</span>
+</a>
+</nav>
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-on-primary-container py-3 rounded-lg font-bold text-sm mb-4 shadow-lg shadow-primary/10 active:scale-95 transition-transform">
+            Join High Stakes
+        </button>
+<!-- Footer Nav -->
+<div class="pt-4 border-t border-outline-variant/10 space-y-1">
+<a class="flex items-center space-x-3 px-4 py-2 text-[#adaaaa] hover:text-[#e5e2e1] text-sm" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-2 text-[#adaaaa] hover:text-[#e5e2e1] text-sm" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="help">help</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 mt-16 p-8 min-h-screen">
+<!-- Hero Section -->
+<section class="mb-12 relative overflow-hidden rounded-xl p-10">
+<div class="absolute inset-0 bg-gradient-to-r from-[#000000] via-[#0e0e0e]/40 to-transparent z-10"></div>
+<img class="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay" data-alt="Luxurious dimly lit poker room with deep green felt tables and atmospheric shadows, high-end editorial style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCQCNCT1AhNjjGipwJlkz2utj-qNbCeAA4qXU49VsFEwXGMEpcku-ccrzrF53X1ZVtvYWJQP4XednVcfLXVc28YL40m-rX7_W8lTyx7eMwDiG9OGVkOtx0ysmNXtn85VQXeJbUOfbKxu5Kv6cMZVq19i742O9Bduea7QHyWQ5OLZ7GxAnCn87DCmf46mt_wIf0l0uu79x7L4Jp31wJd7Jtk35DdOVN4QjYOEuwv3iMI98dyTHhcWnjL9Bkdm5g75PqcwFpCBlOTZQ"/>
+<div class="relative z-20 max-w-2xl">
+<h1 class="text-5xl font-extrabold tracking-tighter text-white mb-4">社交中心</h1>
+<p class="text-secondary text-lg font-medium leading-relaxed max-w-lg">
+                    连接全球顶尖牌手，组建你的专属战队。在精英圈层中博弈，见证实力的碰撞。
+                </p>
+</div>
+</section>
+<!-- Interaction Bar -->
+<section class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex items-center space-x-2 p-1 bg-surface-container-low rounded-lg w-fit">
+<button class="px-6 py-2 bg-surface-container-highest text-primary font-bold rounded-md shadow-sm">全部</button>
+<button class="px-6 py-2 text-on-surface-variant hover:text-secondary transition-colors font-medium">在线</button>
+<button class="px-6 py-2 text-on-surface-variant hover:text-secondary transition-colors font-medium">活跃中</button>
+</div>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors" data-icon="search">search</span>
+<input class="w-full md:w-80 bg-surface-container-lowest border border-outline-variant/20 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 text-white pl-12 pr-4 py-3 rounded-xl transition-all outline-none" placeholder="搜索玩家名称或 ID..." type="text"/>
+</div>
+</section>
+<!-- Friend List Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Friend Card 1 -->
+<div class="glass-card p-5 rounded-xl flex flex-col justify-between group hover:border-primary/30 transition-all duration-300">
+<div class="flex items-start justify-between mb-6">
+<div class="flex items-center space-x-4">
+<div class="relative">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary active-glow">
+<img class="w-full h-full object-cover" data-alt="Confident professional male player in a dark suit, premium portrait photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPHi1bWd8ou85GVz2uCsihKm4Iex522aPvswoQ15dD3Ep5MWdld-iLvJI549BkdjcvFDfKO0wUDnZqkxmLm6yHCyuSxc9-cCnEK4XHXovkIZ6jX2-7Icd7RFbjHfpsDekB0ElfEYqe-bYn1xMD52E5msLu6whEuSUUBv5Vj3cVay-tVgiQg94AfgtrXh8mUKe8lLqK2O1j7hyvJPhdiX6Kf5MdTCETk-_75kg3Q-5iyekYwI63VjvcrtWoi6lIClQPMVwFsolVo98"/>
+</div>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-primary border-4 border-surface rounded-full"></div>
+</div>
+<div>
+<h3 class="text-white font-bold text-lg tracking-tight">Obsidian_Ace</h3>
+<div class="flex items-center space-x-2">
+<span class="text-tertiary text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 border border-tertiary/30 rounded">Diamond VIP</span>
+<span class="text-on-surface-variant text-xs">LV. 88</span>
+</div>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg mb-6 border border-outline-variant/5">
+<div class="flex items-center space-x-2 text-xs text-on-surface-variant mb-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>当前状态</span>
+</div>
+<p class="text-sm font-semibold text-secondary">游戏中: 澳门高额桌</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-2.5 rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-container-highest transition-all text-sm font-bold">发消息</button>
+<button class="flex-1 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-on-primary-container transition-all text-sm font-bold">观战</button>
+</div>
+</div>
+<!-- Friend Card 2 -->
+<div class="glass-card p-5 rounded-xl flex flex-col justify-between group hover:border-primary/30 transition-all duration-300">
+<div class="flex items-start justify-between mb-6">
+<div class="flex items-center space-x-4">
+<div class="relative">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/40">
+<img class="w-full h-full object-cover" data-alt="Elegant woman player with sharp focus, high contrast lighting, professional aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCl_-Fbie-QSHgAtxDxg73LB7HRIhLlV1XKZLtqhbVg-ovgJWRF4VhJWlvvDK8ET1q-Xf-K72LUrXqYDddd-qdX1oOO92D_Ic-SGD-fTj-R8-ZE1FyhHxTZ61I4W4cyUsTfURxWPYXHKenwqHJOYawfePStx7OtHZKmzz12AU5EmPcYHxYKlU-7qWChsq8R8vHQ_6vm9wSwSqjNKF6GuKxjGJqxDDiit9G3JgSDAlpvdx84Ml14KYwaojBscrHOVbimK03pHq6YC78"/>
+</div>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-primary border-4 border-surface rounded-full"></div>
+</div>
+<div>
+<h3 class="text-white font-bold text-lg tracking-tight">Luna_Royal</h3>
+<div class="flex items-center space-x-2">
+<span class="text-primary text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 border border-primary/30 rounded">传奇金领</span>
+<span class="text-on-surface-variant text-xs">LV. 102</span>
+</div>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg mb-6 border border-outline-variant/5">
+<div class="flex items-center space-x-2 text-xs text-on-surface-variant mb-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>当前状态</span>
+</div>
+<p class="text-sm font-semibold text-secondary">在线 (空闲)</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-2.5 rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-container-highest transition-all text-sm font-bold">发消息</button>
+<button class="flex-1 py-2.5 rounded-lg bg-primary-container text-on-primary-container hover:brightness-110 transition-all text-sm font-bold shadow-lg shadow-primary/20">挑战</button>
+</div>
+</div>
+<!-- Add Friend Slot -->
+<div class="border-2 border-dashed border-outline-variant/20 rounded-xl p-5 flex flex-col items-center justify-center text-on-surface-variant hover:border-primary/50 hover:text-primary transition-all cursor-pointer bg-surface-container-low/30 group">
+<div class="w-16 h-16 rounded-full border-2 border-dashed border-outline-variant/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl" data-icon="add">add</span>
+</div>
+<p class="font-bold text-lg">添加新好友</p>
+<p class="text-xs mt-1 text-on-surface-variant/60">通过 ID 或 昵称 搜索</p>
+</div>
+<!-- Friend Card 3 -->
+<div class="glass-card p-5 rounded-xl flex flex-col justify-between group hover:border-primary/30 transition-all duration-300">
+<div class="flex items-start justify-between mb-6">
+<div class="flex items-center space-x-4 opacity-70 grayscale">
+<div class="relative">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="Male player in casual attire, moody atmospheric portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCChm_kv7y_ISsxueyMRzPlHrKYmu3LndEBwOMeninoFq8NuNeR2UN_5k6hLFvG01s2Ze7NMRJRwCuFc88vSUNWxDpp4irOcFcPIoyFUcO-ISXmhspjVoTH2Dc8M4o1vD40jsXckZU4AaOPCqmaHZPwAajdHKLoXLpyj2X5Cgx4ivG2aO-adUFA5DmgKT7i1uRsNcPhmPteg2q1zz8eEqQTGsEPZw_OIBhWSt71I0z3Sf9EccH9uDpsG8W3Ez7LUVqEIBtJ-2lyb8I"/>
+</div>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-outline-variant border-4 border-surface rounded-full"></div>
+</div>
+<div>
+<h3 class="text-white font-bold text-lg tracking-tight">Vegas_Viper</h3>
+<div class="flex items-center space-x-2">
+<span class="text-on-surface-variant text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 border border-outline-variant/30 rounded">Platinum</span>
+<span class="text-on-surface-variant text-xs">LV. 45</span>
+</div>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg mb-6 border border-outline-variant/5">
+<div class="flex items-center space-x-2 text-xs text-on-surface-variant mb-1">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span>当前状态</span>
+</div>
+<p class="text-sm font-semibold text-on-surface-variant">离线 (3小时前)</p>
+</div>
+<div class="flex gap-3">
+<button class="w-full py-2.5 rounded-lg border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-highest transition-all text-sm font-bold">查看资料</button>
+</div>
+</div>
+<!-- Friend Card 4 -->
+<div class="glass-card p-5 rounded-xl flex flex-col justify-between group hover:border-primary/30 transition-all duration-300">
+<div class="flex items-start justify-between mb-6">
+<div class="flex items-center space-x-4">
+<div class="relative">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary">
+<img class="w-full h-full object-cover" data-alt="Focused professional female player, high-end editorial headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcFQ63aZGvhxKMmhjav-XcanuIPEU3EE6Z46enzd0YPc-36QB4fB0d65j6Y2uabrfWjg1skM6VrYcgEEOLLd6gwFGR2HWEHifT5arljz5HBnVbZYBmF_hBQZn4AsEDVva2Ggr1BYn-Nq0Y9KppeLdk84CNj4PSY0OJQB4iB9ws8vYOskKjzAwPl7O-mIywlVUJ_jr7YG6dbw_SM0G_doPij90GtHr2rW8GhmEX12yoNZjWL2OkSe_8LKiJJHKjUunbWhU6R-bMLtI"/>
+</div>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-primary border-4 border-surface rounded-full"></div>
+</div>
+<div>
+<h3 class="text-white font-bold text-lg tracking-tight">Jade_Shadow</h3>
+<div class="flex items-center space-x-2">
+<span class="text-tertiary text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 border border-tertiary/30 rounded">Grandmaster</span>
+<span class="text-on-surface-variant text-xs">LV. 120</span>
+</div>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg mb-6 border border-outline-variant/5">
+<div class="flex items-center space-x-2 text-xs text-on-surface-variant mb-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>当前状态</span>
+</div>
+<p class="text-sm font-semibold text-secondary">游戏中: SSS 超级锦标赛</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-2.5 rounded-lg border border-outline-variant/30 text-secondary hover:bg-surface-container-highest transition-all text-sm font-bold">发消息</button>
+<button class="flex-1 py-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-on-primary-container transition-all text-sm font-bold">观战</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action for Quick Chat -->
+<div class="fixed bottom-8 right-8 z-50">
+<button class="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary-container text-on-primary-container shadow-2xl shadow-primary/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl" data-icon="chat_bubble">chat_bubble</span>
+</button>
+</div>
+</body></html>

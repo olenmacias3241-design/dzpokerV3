@@ -2,7 +2,33 @@
 {% block title %}锦标赛 · DZPoker{% endblock %}
 {% block content %}
 <div class="tournaments-page">
-    <h1 class="page-title">锦标赛</h1>
+    <section class="stitch-hero">
+        <p class="stitch-kicker">Major Tournament Season</p>
+        <h1 class="stitch-title-xl">锦标赛</h1>
+        <p class="stitch-subtitle">争夺巅峰荣誉，赢取海量奖池。赛事中心采用 Stitch 的高端赛事季版式，并继续由 `tournaments.js` 动态填充。</p>
+        <div class="stitch-grid-3">
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">主赛事季</p>
+                <strong id="tournaments-hero-feature">百万保底主赛</strong>
+                <p class="stitch-muted">主舞台赛事与常规分站并行。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">赛制</p>
+                <strong id="tournaments-hero-types">SNG / MTT</strong>
+                <p class="stitch-muted">覆盖单桌赛与多桌赛。</p>
+            </div>
+            <div class="stitch-card" style="padding:18px;">
+                <p class="stitch-eyebrow">状态</p>
+                <strong id="tournaments-hero-status">报名中 / 进行中 / 晚注册</strong>
+                <p class="stitch-muted">适合真实赛事状态映射。</p>
+            </div>
+        </div>
+    </section>
+    <div class="stitch-grid-3" style="margin-bottom:24px;">
+        <div class="blind-level-row">赛事总数 <span id="tournaments-total-count">—</span></div>
+        <div class="blind-level-row">报名中 <span id="tournaments-registration-count">—</span></div>
+        <div class="blind-level-row">进行中 <span id="tournaments-running-count">—</span></div>
+    </div>
     <div class="panel tournaments-filters">
         <span class="filter-label">类型</span>
         <button type="button" class="filter-btn active" data-type="all">全部</button>
